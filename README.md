@@ -39,6 +39,26 @@ npm start        # serve o build
 npm run spec     # valida os endpoints da API (spec — ver item 12)
 ```
 
+## 3.1 Testar o fluxo do arrematante (E2E)
+
+Contas de teste preparadas na base local (tenant `localhost`/lancevip), senha **`Teste@123`**:
+
+| Usuário | Status | Esperado |
+|---|---|---|
+| `TONINHO1` | aprovado | login + habilitação + lance OK |
+| `GUILHERME` | aprovado | idem |
+| `LEAO1` | reprovado | login OK, **lance bloqueado** ("não está apto") |
+
+Roteiro: abrir `http://localhost:3100/login` → entrar com `TONINHO1`/`Teste@123` → `/conta` mostra
+seus dados/lances/habilitações reais → abrir um lote de um leilão **aberto** (ex.: leilão 2653,
+lote `/lote/34844`) → **Habilitar-se** → **Dar lance**.
+
+> Preparar/repreparar uma conta (na pasta `../api-v2`):
+> ```bash
+> php -d memory_limit=1G bin/console app:arrematante:preparar-teste --arrematante=23240 --senha=Teste@123 --status=aprovado
+> ```
+> Login tem rate-limit (10 tentativas/5min por IP) — se bloquear, aguarde alguns minutos.
+
 ## 4. Estrutura de pastas
 
 ```

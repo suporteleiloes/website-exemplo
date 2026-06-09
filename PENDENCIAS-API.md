@@ -58,12 +58,24 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 
 ---
 
-## 🟡 Dados de ambiente (não é bug de API)
+## ✅ Resolvido na 2ª rodada (E2E do arrematante)
 
-### P7 — Sem conta de arrematante de teste no tenant
-- **Fluxo:** login, conta, lance, habilitação.
-- **Faltou:** credencial de arrematante dev (como existe `admin/123456` no Console). O BFF de login foi validado só com erro (retorna `401` estruturado corretamente).
-- **Sugestão:** fornecer um arrematante de teste para validar a área logada ponta a ponta.
+### B1 — BUG corrigido: lance V2 quebrava 100% (`AuditLogSubscriber` cast de `Lote`)
+- **Fluxo:** envio de lance autenticado (`POST /api/lotes/{id}/lance`).
+- **Sintoma:** todo lance retornava `Object of class App\Entity\Leilao\Lote could not be converted to string`.
+- **Causa:** `LanceTransaction` usa o `Lote` como `@Id` (identidade por associação). O `AuditLogSubscriber` (auditoria global) fazia `(string) $id` com `$id` sendo o objeto `Lote`. Bug **latente** — o caminho de lance da V2 nunca tinha sido exercido com a auditoria ativa.
+- **Correção (api-v2):** normalizar id-objeto → id escalar em `src/EventListener/AuditLogSubscriber.php`. Cobre qualquer entidade com id por associação.
+
+### P7 — RESOLVIDO: conta de arrematante de teste criada
+- Criado o comando **`bin/console app:arrematante:preparar-teste --arrematante=<id> --senha=Teste@123 --status=aprovado|reprovado`** (api-v2) — reaproveita um arrematante real da base, define senha conhecida, habilita e ajusta status.
+- **Contas de teste (tenant `localhost`/lancevip, senha `Teste@123`):** `TONINHO1` e `GUILHERME` (aprovados), `LEAO1` (reprovado).
+- **Validado E2E pela POC:** login → `/conta` (33 leilões/habilitações reais) → habilitar no leilão 2653 → lance aprovado (id 96335, R$ 310.000); reprovado bloqueado; auto-cobertura de lance bloqueada (regra correta); rate-limit de login ativo.
+
+### P10 — GET status de habilitação exige sessão de cliente
+- **Endpoint:** `GET /api/public/arrematantes/service/leiloes/{id}/habilitar` retorna `401 Invalid User Client Session` mesmo com Bearer válido (o `POST` habilitar funciona normal).
+- **Sugestão:** aceitar o mesmo Bearer JWT no GET de status (hoje parece exigir um header/sessão de cliente adicional).
+
+## 🟡 Dados de ambiente (não é bug de API)
 
 ### P8 — Branding do site não preenchido no tenant
 - **Tela:** shell (cores/logo/nome).
