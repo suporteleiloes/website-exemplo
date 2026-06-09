@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE, REFRESH_COOKIE } from '@/lib/config';
+import { maxAgeFromTimestamp } from '@/lib/cookies';
 
 // BFF: renova o access token usando o refresh token (P4), mantendo ambos em cookies httpOnly.
 // Chame quando o access expirar (ou ao receber 401). Rotaciona o refresh (uso único).
@@ -28,9 +29,9 @@ export async function POST() {
 
   const base = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/' };
   const out = NextResponse.json({ ok: true });
-  out.cookies.set(JWT_COOKIE, data.token, { ...base, maxAge: 60 * 60 * 24 });
+  out.cookies.set(JWT_COOKIE, data.token, { ...base, maxAge: maxAgeFromTimestamp(data.expires, 60 * 60 * 24) });
   if (data.refreshToken) {
-    out.cookies.set(REFRESH_COOKIE, data.refreshToken, { ...base, maxAge: 60 * 60 * 24 * 30 });
+    out.cookies.set(REFRESH_COOKIE, data.refreshToken, { ...base, maxAge: maxAgeFromTimestamp(data.refreshExpires, 60 * 60 * 24 * 30) });
   }
   return out;
 }
