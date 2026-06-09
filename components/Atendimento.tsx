@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 
-type Msg = { role: 'user' | 'bot' | 'sys'; text: string };
+type Msg = { id?: number; role: 'user' | 'bot' | 'sys'; text: string };
 
 // Render leve de markdown (o bot responde em markdown). Sem libs, sem innerHTML:
 // trata #/##/### (título), -/* (lista), --- (divisor) e **negrito** inline.
@@ -40,9 +40,11 @@ interface Props {
 export default function Atendimento({ slug, habilitado, boasVindas }: Props) {
   const [aberto, setAberto] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [status, setStatus] = useState<string | null>(null);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const sessionRef = useRef<string>('');
+  const enviandoRef = useRef(false);
   const fimRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,37 +56,66 @@ export default function Atendimento({ slug, habilitado, boasVindas }: Props) {
 
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, aberto]);
 
+  const welcome: Msg = { role: 'bot', text: boasVindas || 'Olá! Como podemos ajudar você hoje?' };
+
+  // Histórico é a fonte da verdade (backend). Persiste após F5 e traz as respostas
+  // do atendente humano (que responde pelo ERP). `silencioso` evita flicker no polling.
+  async function carregarHistorico(welcomeSeVazio = false) {
+    if (!sessionRef.current) return;
+    try {
+      const r = await fetch(`/api/proxy/public/widget/${slug}/historico?session_id=${encodeURIComponent(sessionRef.current)}`, { cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+      const hist: Msg[] = Array.isArray(d?.messages)
+        ? d.messages.map((m: any) => ({ id: m.id, role: m.role === 'user' ? 'user' : 'bot', text: m.text }))
+        : [];
+      setStatus(d?.status ?? null);
+      if (hist.length === 0) {
+        if (welcomeSeVazio) setMsgs((prev) => (prev.length === 0 ? [welcome] : prev));
+        return;
+      }
+      // só atualiza se mudou (evita re-render/scroll desnecessário no polling)
+      setMsgs((prev) => (JSON.stringify(prev.filter((m) => m.role !== 'sys')) === JSON.stringify(hist) ? prev : hist));
+    } catch { /* ignora */ }
+  }
+
   function abrir() {
     setAberto(true);
-    if (msgs.length === 0) {
-      setMsgs([{ role: 'bot', text: boasVindas || 'Olá! Como podemos ajudar você hoje?' }]);
-    }
+    if (msgs.length === 0) setMsgs([welcome]);
+    carregarHistorico(true);
   }
+
+  // Polling LAZY: só roda enquanto o chat está ABERTO (não conecta nada no load do site).
+  useEffect(() => {
+    if (!aberto) return;
+    const t = setInterval(() => { if (!enviandoRef.current) carregarHistorico(); }, 4000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto]);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     const t = texto.trim();
     if (!t || enviando) return;
     setTexto('');
-    setMsgs((m) => [...m, { role: 'user', text: t }]);
-    setEnviando(true);
+    setMsgs((m) => [...m.filter((x) => x !== welcome || m.length > 1), { role: 'user', text: t }]);
+    setEnviando(true); enviandoRef.current = true;
     try {
       const r = await fetch('/api/proxy/public/inbound/webchat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, session_id: sessionRef.current, text: t }),
       });
       const d = await r.json().catch(() => ({}));
-      if (d?.replied && d?.reply_text) {
-        setMsgs((m) => [...m, { role: 'bot', text: d.reply_text }]);
-      } else if (d?.status === 'aguardando_humano' || d?.ok) {
-        setMsgs((m) => [...m, { role: 'sys', text: 'Recebemos sua mensagem. Um atendente vai responder em breve.' }]);
-      } else {
+      if (!r.ok && !d?.ok) {
         setMsgs((m) => [...m, { role: 'sys', text: d?.motivo === 'widget_disabled' ? 'Atendimento indisponível no momento.' : 'Não foi possível enviar. Tente novamente.' }]);
+      } else {
+        // backend persistiu user (+bot). Recarrega o histórico canônico.
+        await carregarHistorico();
       }
     } catch {
       setMsgs((m) => [...m, { role: 'sys', text: 'Erro de conexão. Tente novamente.' }]);
     } finally {
-      setEnviando(false);
+      setEnviando(false); enviandoRef.current = false;
     }
   }
 
@@ -96,18 +127,25 @@ export default function Atendimento({ slug, habilitado, boasVindas }: Props) {
           <div className="flex items-center justify-between bg-marca px-4 py-3 text-white">
             <div>
               <p className="text-sm font-semibold">Atendimento</p>
-              <p className="text-xs opacity-80">Online agora</p>
+              <p className="text-xs opacity-80">
+                {status === 'em_atendimento' ? 'Falando com a equipe' : status === 'aguardando_humano' ? 'Conectando a um atendente…' : 'Online agora'}
+              </p>
             </div>
             <button onClick={() => setAberto(false)} aria-label="Fechar" className="text-white/80 hover:text-white">✕</button>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto bg-gray-50 p-3">
             {msgs.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={m.id ?? `local-${i}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                   m.role === 'user' ? 'whitespace-pre-line bg-marca text-white' : m.role === 'sys' ? 'bg-amber-100 text-amber-800' : 'space-y-0.5 bg-white text-gray-700 shadow-sm'
                 }`}>{m.role === 'bot' ? <Markdown text={m.text} /> : m.text}</div>
               </div>
             ))}
+            {(status === 'aguardando_humano' || status === 'em_atendimento') && (
+              <p className="text-center text-xs text-gray-400">
+                {status === 'aguardando_humano' ? 'Sua mensagem foi encaminhada. Um atendente responderá em breve.' : 'Você está em atendimento com a equipe.'}
+              </p>
+            )}
             {enviando && <div className="flex justify-start"><div className="rounded-2xl bg-white px-3 py-2 text-sm text-gray-400 shadow-sm">digitando…</div></div>}
             <div ref={fimRef} />
           </div>
