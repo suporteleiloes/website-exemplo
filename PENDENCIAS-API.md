@@ -1,6 +1,6 @@
 # Pendências e melhorias da API Website V2 — encontradas pela POC
 
-Levantadas construindo o `exemplo-site` contra a API real (tenant `lancevip`/`localhost`, 2026-06-09).
+Levantadas construindo o `exemplo-site` contra a API real (tenant `leiloeiroexemplo`/`localhost`, 2026-06-09).
 Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão**.
 
 > Nada aqui **impediu** a POC de funcionar — todos os fluxos públicos estão operacionais. São lacunas
@@ -48,7 +48,7 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 > revogável no logout, isolado por tenant. A POC guarda os 2 cookies httpOnly + route `/api/auth/refresh`.
 
 ### P5 — ✅ RESOLVIDO — Área logada com endpoints heterogêneos
-> Criada a fachada **`/api/website/v2/me/*`** (`MeController`) reusando os repositórios existentes (sem duplicar regra, sem mexer nos endpoints antigos): `GET /me`, `/me/favoritos`, `/me/lances`, `/me/habilitacoes`, `/me/propostas`, `/me/documentos`. Escopo derivado do token. A POC `/conta` já consome. Validado E2E (GUILHERME: `/me` → perfil real; `/me/lances` e `/me/habilitacoes` com dados reais).
+> Criada a fachada **`/api/website/v2/me/*`** (`MeController`) reusando os repositórios existentes (sem duplicar regra, sem mexer nos endpoints antigos): `GET /me`, `/me/favoritos`, `/me/lances`, `/me/habilitacoes`, `/me/propostas`, `/me/documentos`. Escopo derivado do token. A POC `/conta` já consome. Validado E2E (perfil/lances/habilitações reais do arrematante logado).
 
 ### P11 — (menor) Shape de imagem do banner difere de leilão/bem
 - **Endpoint:** `GET /site/banners`.
@@ -81,9 +81,8 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 - **Correção (api-v2):** normalizar id-objeto → id escalar em `src/EventListener/AuditLogSubscriber.php`. Cobre qualquer entidade com id por associação.
 
 ### P7 — RESOLVIDO: conta de arrematante de teste criada
-- Criado o comando **`bin/console app:arrematante:preparar-teste --arrematante=<id> --senha=Teste@123 --status=aprovado|reprovado`** (api-v2) — reaproveita um arrematante real da base, define senha conhecida, habilita e ajusta status.
-- **Contas de teste (tenant `localhost`/lancevip, senha `Teste@123`):** `TONINHO1` e `GUILHERME` (aprovados), `LEAO1` (reprovado).
-- **Validado E2E pela POC:** login → `/conta` (33 leilões/habilitações reais) → habilitar no leilão 2653 → lance aprovado (id 96335, R$ 310.000); reprovado bloqueado; auto-cobertura de lance bloqueada (regra correta); rate-limit de login ativo.
+- Criado o comando **`bin/console app:arrematante:preparar-teste --arrematante=<id> --senha=<senha> --status=aprovado|reprovado`** (api-v2) — reaproveita um arrematante existente da base, define senha conhecida, habilita e ajusta status. Prepare um aprovado e um reprovado para cobrir os dois caminhos.
+- **Validado E2E pela POC:** login → `/conta` (leilões/habilitações reais) → habilitar num leilão aberto → lance aprovado; reprovado bloqueado; auto-cobertura de lance bloqueada (regra correta); rate-limit de login ativo.
 
 ### P10 — ✅ RESOLVIDO (era artefato de teste) — "Invalid User Client Session"
 > Investigado a fundo: o claim `client` do JWT só diverge ("local" vs "localhost") quando login e

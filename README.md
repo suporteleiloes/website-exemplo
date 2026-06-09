@@ -4,7 +4,7 @@ Prova de conceito **funcional** de um site público de leilões consumindo a **A
 Serve como: exemplo técnico de consumo, base para novos sites, validação da documentação da API e
 identificação de lacunas. Construído em **Next.js 14 (App Router) + TypeScript + Tailwind**.
 
-> Status: **funcional ponta a ponta contra a API real** (build verde; spec 25/25; páginas renderizam dados reais do tenant `lancevip`/`localhost`). Lacunas encontradas em [`PENDENCIAS-API.md`](./PENDENCIAS-API.md).
+> Status: **funcional ponta a ponta contra a API real** (build verde; spec 25/25; páginas renderizam dados reais do tenant `leiloeiroexemplo`/`localhost`). Lacunas encontradas em [`PENDENCIAS-API.md`](./PENDENCIAS-API.md).
 
 ---
 
@@ -41,22 +41,21 @@ npm run spec     # valida os endpoints da API (spec — ver item 12)
 
 ## 3.1 Testar o fluxo do arrematante (E2E)
 
-Contas de teste preparadas na base local (tenant `localhost`/lancevip), senha **`Teste@123`**:
+Prepare suas próprias contas de teste na base local a partir de arrematantes existentes, com o
+comando da API (na pasta `../api-v2`). Use um apelido **aprovado** e um **reprovado** para cobrir
+os dois caminhos:
 
-| Usuário | Status | Esperado |
-|---|---|---|
-| `TONINHO1` | aprovado | login + habilitação + lance OK |
-| `GUILHERME` | aprovado | idem |
-| `LEAO1` | reprovado | login OK, **lance bloqueado** ("não está apto") |
+```bash
+# aprovado → login + habilitação + lance OK
+php -d memory_limit=1G bin/console app:arrematante:preparar-teste --arrematante=<id> --senha=<senha> --status=aprovado
+# reprovado → login OK, lance bloqueado ("não está apto")
+php -d memory_limit=1G bin/console app:arrematante:preparar-teste --arrematante=<id> --senha=<senha> --status=reprovado
+```
 
-Roteiro: abrir `http://localhost:3100/login` → entrar com `TONINHO1`/`Teste@123` → `/conta` mostra
-seus dados/lances/habilitações reais → abrir um lote de um leilão **aberto** (ex.: leilão 2653,
-lote `/lote/34844`) → **Habilitar-se** → **Dar lance**.
+Roteiro: abrir `http://localhost:3100/login` → entrar com o apelido/senha preparados → `/conta`
+mostra dados/lances/habilitações reais → abrir um lote de um leilão **aberto** → **Habilitar-se**
+→ **Dar lance**. Ou criar uma conta do zero em `/cadastro`.
 
-> Preparar/repreparar uma conta (na pasta `../api-v2`):
-> ```bash
-> php -d memory_limit=1G bin/console app:arrematante:preparar-teste --arrematante=23240 --senha=Teste@123 --status=aprovado
-> ```
 > Login tem rate-limit (10 tentativas/5min por IP) — se bloquear, aguarde alguns minutos.
 
 ## 4. Estrutura de pastas

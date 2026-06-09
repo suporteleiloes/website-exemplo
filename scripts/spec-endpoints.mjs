@@ -92,6 +92,34 @@ async function run() {
   r = await jpost('/newsletter', { email: 'invalido' });
   check('POST /newsletter (email inválido 400)', r.status === 400);
 
+  // Venda Direta (WebsiteV2_VendaDireta) — vocabulário próprio, sem termos de leilão
+  const PROIBIDO = /lei[lã]|lote|lance|arrematant/i;
+  r = await jget('/venda-direta/eventos?limit=3');
+  const evOk = r.status === 200 && Array.isArray(r.body?.result);
+  check('GET /venda-direta/eventos (envelope)', evOk, `total=${r.body?.total}`);
+  const ev = r.body?.result?.[0];
+  if (ev) {
+    check('  evento tem modos + statusLabel', !!(ev.modos && ev.statusLabel && 'dataLimitePropostas' in ev));
+    check('  evento sem vocabulário de leilão', !PROIBIDO.test(JSON.stringify({ s: ev.statusLabel, t: Object.keys(ev) })));
+    const rev = await jget(`/venda-direta/eventos/${ev.slug || ev.id}`);
+    check('GET /venda-direta/eventos/{idOrSlug}', rev.status === 200 && rev.body?.id === ev.id);
+    const ra = await jget(`/venda-direta/anuncios?evento=${ev.id}&limit=3`);
+    check('GET /venda-direta/anuncios?evento=', ra.status === 200 && Array.isArray(ra.body?.result), `total=${ra.body?.total}`);
+    const an = ra.body?.result?.[0];
+    if (an) {
+      check('  anúncio tem precoMinimo+modos+incremento', 'precoMinimo' in an && !!an.modos && 'incremento' in an);
+      const ras = await jget(`/venda-direta/anuncios/${an.slug || an.id}`);
+      check('GET /venda-direta/anuncios/{idOrSlug}', ras.status === 200 && ras.body?.id === an.id);
+      const rof = await jget(`/venda-direta/anuncios/${an.id}/ofertas-publicas`);
+      check('GET /venda-direta/anuncios/{id}/ofertas-publicas', rof.status === 200 && 'result' in (rof.body || {}));
+    }
+  }
+  r = await jget('/venda-direta/buscador/filtros');
+  check('GET /venda-direta/buscador/filtros', r.status === 200 && 'categorias' in (r.body || {}) && 'comitentes' in (r.body || {}));
+  // Escrita exige Bearer → sem token deve negar (401/403)
+  r = await jpost('/venda-direta/anuncios/1/oferta', { valor: 1 });
+  check('POST /venda-direta/.../oferta sem auth (nega)', r.status === 401 || r.status === 403, `status=${r.status}`);
+
   // Relatório
   console.log(linhas.join('\n'));
   console.log(`\n${pass} passou, ${fail} falhou.\n`);

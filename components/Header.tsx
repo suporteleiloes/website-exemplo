@@ -25,13 +25,19 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
 
         <nav className="order-2 ml-auto flex items-center gap-4 text-sm font-medium md:order-3">
           <Link href="/leiloes" className="hover:text-marca">Leilões</Link>
-          {headerMenu.slice(0, 4).map((it) => (
+          <Link href="/venda-direta" className="hover:text-marca">Venda Direta</Link>
+          <Link href="/mapa" className="hidden hover:text-marca md:inline">Mapa</Link>
+          <Link href="/contato" className="hidden hover:text-marca md:inline">Contato</Link>
+          {headerMenu.slice(0, 2).map((it) => (
             <a key={it.id} href={it.url || '#'} className="hidden hover:text-marca lg:inline">{it.titulo}</a>
           ))}
           {user ? (
             <Link href="/conta" className="btn-outline">Olá, {(user.name || 'Conta').split(' ')[0]}</Link>
           ) : (
-            <Link href="/login" className="btn-primary">Entrar</Link>
+            <>
+              <Link href="/cadastro" className="hidden hover:text-marca sm:inline">Cadastre-se</Link>
+              <Link href="/login" className="btn-primary">Entrar</Link>
+            </>
           )}
         </nav>
       </div>

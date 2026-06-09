@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Atendimento from '@/components/Atendimento';
+import { WIDGET_SLUG } from '@/lib/config';
 import { getSiteConfig, getMenus } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
 import type { SiteConfig, MenuGrupo } from '@/lib/types';
@@ -31,6 +33,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Header config={config} menus={menus} user={user} />
         <main className="min-h-[60vh] py-6">{children}</main>
         <Footer config={config} />
+        <Atendimento
+          slug={WIDGET_SLUG}
+          whatsapp={config?.contato?.whatsapp ?? null}
+          habilitado={!!config?.features?.permitirChat}
+        />
       </body>
     </html>
   );

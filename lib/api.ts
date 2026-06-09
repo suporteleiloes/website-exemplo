@@ -8,7 +8,7 @@ import type {
   Paginated, Leilao, Lote, LancePublico, Filtros, SiteConfig, Banner, MenuGrupo, Comitente, Leiloeiro,
 } from './types';
 
-type Params = Record<string, string | number | boolean | undefined | null>;
+export type Params = Record<string, string | number | boolean | undefined | null>;
 
 export class ApiException extends Error {
   status: number;
@@ -99,6 +99,19 @@ export const getLancesPublicos = (id: number) => apiGet<{ result: LancePublico[]
 
 export interface VizinhoRef { id: number; slug: string | null; numero: number | null }
 export const getLoteVizinhos = (id: number) => apiGet<{ anterior: VizinhoRef | null; proximo: VizinhoRef | null }>(`/lotes/${id}/vizinhos`, { revalidate: 15 });
+
+// ── Contato ──────────────────────────────────────────────────────
+export interface SetorItem { id: number; nome: string }
+export interface ContatoSetores { assuntos: SetorItem[]; departamentos: SetorItem[] }
+export const getContatoSetores = () => apiGet<ContatoSetores>('/contato/setores', { revalidate: 120 });
+
+// ── Mapa de bens georreferenciado ────────────────────────────────
+export interface MapaPin {
+  loteId: number; loteSlug: string | null; numero: number | string | null; titulo: string | null;
+  uf: string | null; cidade: string | null; latitude: string | number; longitude: string | number;
+  leilaoId: number; leilaoSlug: string | null;
+}
+export const getMapa = (params?: Params) => apiGet<{ result: MapaPin[]; total: number }>('/mapa', { params, revalidate: 30 });
 
 export const getAgenda = (mes: number, ano: number) => apiGet<unknown>('/agenda', { params: { mes, ano }, revalidate: 30 });
 export const getAgendaProximos = (limit = 5) => apiGet<{ result: Leilao[] }>('/agenda/proximos', { params: { limit }, revalidate: 30 });

@@ -1,5 +1,5 @@
 // Tipos derivados das respostas REAIS da API Website V2 (verificados em 2026-06-09,
-// tenant lancevip/localhost). Campos opcionais quando podem vir null/ausentes.
+// tenant leiloeiroexemplo/localhost). Campos opcionais quando podem vir null/ausentes.
 
 export interface Imagem {
   full: string | null;
