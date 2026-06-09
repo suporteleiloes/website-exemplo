@@ -35,7 +35,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Footer config={config} />
         <Atendimento
           slug={WIDGET_SLUG}
-          whatsapp={config?.contato?.whatsapp ?? null}
           habilitado={!!config?.features?.permitirChat}
         />
       </body>
