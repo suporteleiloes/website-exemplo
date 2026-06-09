@@ -7,6 +7,7 @@
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || process.env.API_BASE || 'https://localhost:8001').replace(/\/$/, '');
 const TENANT = process.env.NEXT_PUBLIC_TENANT || process.env.TENANT || 'localhost';
+const WIDGET_SLUG = process.env.NEXT_PUBLIC_WIDGET_SLUG || 'leiloeiroexemplo';
 const V2 = `${API_BASE}/api/website/v2`;
 const H = { 'Uloc-Mi': TENANT, Accept: 'application/json' };
 
@@ -119,6 +120,12 @@ async function run() {
   // Escrita exige Bearer → sem token deve negar (401/403)
   r = await jpost('/venda-direta/anuncios/1/oferta', { valor: 1 });
   check('POST /venda-direta/.../oferta sem auth (nega)', r.status === 401 || r.status === 403, `status=${r.status}`);
+
+  // Widget Messenger (CopilotSL) — endpoints públicos sob /api/public/widget (fora do V2)
+  const boot = await (await fetch(`${API_BASE}/api/public/widget/${WIDGET_SLUG}/bootstrap`, { headers: H })).json().catch(() => ({}));
+  check('GET widget/bootstrap', boot?.agente === 'CopilotSL' && !!boot?.abas, `agente=${boot?.agente} tema=${boot?.tema}`);
+  const ajuda = await (await fetch(`${API_BASE}/api/public/widget/${WIDGET_SLUG}/ajuda`, { headers: H })).json().catch(() => ({}));
+  check('GET widget/ajuda (central de ajuda)', ajuda?.ok && Array.isArray(ajuda?.artigos), `artigos=${ajuda?.total}`);
 
   // Relatório
   console.log(linhas.join('\n'));
