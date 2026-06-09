@@ -1,10 +1,14 @@
 import type { Bem, Imagem, Leilao } from './types';
 
 // Resolve a melhor URL de imagem disponível (CDN), com fallbacks.
-export function urlImagem(img: Imagem | string | null | undefined, prefer: 'min' | 'thumb' | 'full' = 'min'): string | null {
+// Aceita os dois shapes que a API usa: leilão/bem = {full: string|null}; banner = {full: {url}}.
+export function urlImagem(img: Imagem | string | Record<string, unknown> | null | undefined, prefer: 'min' | 'thumb' | 'full' = 'min'): string | null {
   if (!img) return null;
   if (typeof img === 'string') return img || null;
-  return img[prefer] || img.min || img.thumb || img.full || null;
+  const pick = (v: unknown): string | null =>
+    typeof v === 'string' ? (v || null) : (v && typeof v === 'object' && typeof (v as any).url === 'string' ? (v as any).url : null);
+  const o = img as Record<string, unknown>;
+  return pick(o[prefer]) || pick(o.full) || pick(o.min) || pick(o.thumb) || null;
 }
 
 export function fotoBem(bem: Bem | null | undefined): string | null {

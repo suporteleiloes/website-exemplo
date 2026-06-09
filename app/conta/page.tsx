@@ -11,9 +11,15 @@ async function secao(path: string): Promise<{ ok: boolean; count: number | null;
     if (res.status === 401) return { ok: false, count: null, amostra: [], error: 'Sessão expirada ou sem permissão (401).' };
     if (!res.ok) return { ok: false, count: null, amostra: [], error: `HTTP ${res.status}` };
     const d = await res.json().catch(() => null);
-    const arr: any[] = Array.isArray(d) ? d : (d?.result || d?.historico || d?.lancesAtivos || d?.lotes || []);
-    const amostra = arr.slice(0, 5).map((x) => x?.descricao || x?.titulo || x?.bem?.siteTitulo || x?.lote?.descricao || `#${x?.id ?? '?'}`);
-    return { ok: true, count: Array.isArray(arr) ? arr.length : 0, amostra };
+    // /me/* shapes: lista = {result,total}; favoritos = {lotes,leiloes,bens,total}.
+    const arr: any[] = Array.isArray(d)
+      ? d
+      : (d?.result || d?.historico || (Array.isArray(d?.lotes) || Array.isArray(d?.leiloes) || Array.isArray(d?.bens)
+          ? [...(d?.lotes ?? []), ...(d?.leiloes ?? []), ...(d?.bens ?? [])]
+          : []));
+    const total = typeof d?.total === 'number' ? d.total : arr.length;
+    const amostra = arr.slice(0, 5).map((x) => x?.descricao || x?.titulo || x?.bem?.siteTitulo || x?.lote?.bem?.siteTitulo || x?.lote?.descricao || x?.leilao?.titulo || `#${x?.id ?? '?'}`);
+    return { ok: true, count: total, amostra };
   } catch (e) {
     return { ok: false, count: null, amostra: [], error: (e as Error).message };
   }
@@ -43,10 +49,11 @@ export default async function ContaPage() {
   const user = await getSessionUser().catch(() => null);
   if (!user) redirect('/login');
 
+  // Namespace consolidado da área logada (P5): /api/website/v2/me/*
   const [favoritos, lances, leiloes] = await Promise.all([
-    secao('/api/arrematantes/meusFavoritos'),
-    secao('/api/arrematantes/service/historico/lances'),
-    secao('/api/arrematantes/service/leiloes'),
+    secao('/api/website/v2/me/favoritos'),
+    secao('/api/website/v2/me/lances'),
+    secao('/api/website/v2/me/habilitacoes'),
   ]);
 
   return (
@@ -74,9 +81,9 @@ export default async function ContaPage() {
       </div>
 
       <p className="mt-6 text-xs text-gray-400">
-        As seções acima consomem endpoints autenticados existentes (não replicados na Website V2):
-        <code> /api/arrematantes/meusFavoritos</code>, <code>/api/arrematantes/service/historico/lances</code>, <code>/api/arrematantes/service/leiloes</code>.
-        Erros/401 indicam que o endpoint exige escopo/dados que o usuário de teste não possui — ver PENDENCIAS-API.md.
+        As seções acima consomem o namespace consolidado da área logada (Website V2):
+        <code>/api/website/v2/me/favoritos</code>, <code>/api/website/v2/me/lances</code>, <code>/api/website/v2/me/habilitacoes</code>
+        (+ <code>/me</code>, <code>/me/propostas</code>, <code>/me/documentos</code>). Escopo derivado do token (Bearer JWT).
       </p>
     </div>
   );

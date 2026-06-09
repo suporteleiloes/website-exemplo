@@ -10,7 +10,9 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 
 ## 🔴 Bloqueia funcionalidade pedida
 
-### P1 — `/leiloes` não filtra por localização, categoria nem modalidade
+### P1 — ✅ DECIDIDO (Opção B) — `/leiloes` não filtra por localização/categoria/modalidade
+> Decisão (2026-06-09): o recorte geográfico/por-bem fica em **`/lotes`** (um leilão tipo Caixa tem lotes de várias cidades, então filtrar o *leilão* por cidade não faz sentido). A POC já faz a busca por lotes em `/lotes`. Nada a implementar.
+
 - **Tela/fluxo:** página de Leilões; chips de categoria na Home.
 - **Endpoint:** `GET /api/website/v2/leiloes`.
 - **Faltou:** filtrar leilões por `uf`, `cidade`, `categoria`, `comitente`, **modalidade** (`tipo` online/presencial/simultâneo) e `instancia`. Esses recortes só existem em `/lotes` (são atributos do bem/lote, não do leilão).
@@ -46,7 +48,14 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 - **Resposta ideal:** `POST /api/auth/refresh` devolvendo novo JWT.
 - **Sugestão:** emitir refresh token (httpOnly) no login.
 
-### P5 — Área logada com endpoints heterogêneos
+### P5 — ✅ RESOLVIDO — Área logada com endpoints heterogêneos
+> Criada a fachada **`/api/website/v2/me/*`** (`MeController`) reusando os repositórios existentes (sem duplicar regra, sem mexer nos endpoints antigos): `GET /me`, `/me/favoritos`, `/me/lances`, `/me/habilitacoes`, `/me/propostas`, `/me/documentos`. Escopo derivado do token. A POC `/conta` já consome. Validado E2E (GUILHERME: `/me` → perfil real; `/me/lances` e `/me/habilitacoes` com dados reais).
+
+### P11 — (menor) Shape de imagem do banner difere de leilão/bem
+- **Endpoint:** `GET /site/banners`.
+- **Faltou:** `banner.image` vem como `{full: {url, resolution}}` (objeto aninhado), enquanto leilão/bem usam `{full: string|null}`. Inconsistência de contrato (a POC trata os dois no `urlImagem`).
+- **Sugestão:** normalizar `serializeBanner` pra `{full, thumb, min}` (strings), igual aos demais.
+
 - **Tela/fluxo:** `/conta` (favoritos, lances, habilitações).
 - **Endpoints:** `/api/arrematantes/meusFavoritos`, `/api/arrematantes/service/historico/lances`, `/api/arrematantes/service/leiloes`, `/api/public/arrematantes/*` (mistura de prefixos e envelopes).
 - **Faltou:** um namespace consolidado e shapes padronizados pra área logada do site.
