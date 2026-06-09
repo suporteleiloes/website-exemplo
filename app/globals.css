@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Defaults; sobrescritos em runtime pelas cores de GET /site/config (ver layout.tsx). */
+  --cor-primaria: #1a4db3;
+  --cor-secundaria: #15224b;
+  --cor-destaque: #ff7f00;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+a { @apply transition-colors; }
+
+.container-page { @apply mx-auto max-w-7xl px-4; }
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition;
+}
+.btn-primary { @apply btn text-white; background: var(--cor-primaria); }
+.btn-destaque { @apply btn text-white; background: var(--cor-destaque); }
+.btn-outline { @apply btn border border-gray-300 bg-white hover:bg-gray-50; }
+
+.card { @apply overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:shadow-md; }
+.badge { @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+.input { @apply w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-marca focus:outline-none focus:ring-1 focus:ring-marca; }
+.label { @apply mb-1 block text-xs font-medium text-gray-600; }

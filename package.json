@@ -1,0 +1,27 @@
+{
+  "name": "exemplo-site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "POC de site público de leiloeiro consumindo a API Website V2 (SL ERP).",
+  "scripts": {
+    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 next dev -p 3100",
+    "build": "next build",
+    "start": "next start -p 3100",
+    "lint": "next lint",
+    "spec": "NODE_TLS_REJECT_UNAUTHORIZED=0 node scripts/spec-endpoints.mjs"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "autoprefixer": "10.4.19",
+    "postcss": "8.4.39",
+    "tailwindcss": "3.4.6",
+    "typescript": "5.5.3"
+  }
+}

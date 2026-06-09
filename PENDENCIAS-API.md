@@ -1,0 +1,91 @@
+# Pendências e melhorias da API Website V2 — encontradas pela POC
+
+Levantadas construindo o `exemplo-site` contra a API real (tenant `lancevip`/`localhost`, 2026-06-09).
+Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão**.
+
+> Nada aqui **impediu** a POC de funcionar — todos os fluxos públicos estão operacionais. São lacunas
+> que tornariam a construção de sites mais simples/completa.
+
+---
+
+## 🔴 Bloqueia funcionalidade pedida
+
+### P1 — `/leiloes` não filtra por localização, categoria nem modalidade
+- **Tela/fluxo:** página de Leilões; chips de categoria na Home.
+- **Endpoint:** `GET /api/website/v2/leiloes`.
+- **Faltou:** filtrar leilões por `uf`, `cidade`, `categoria`, `comitente`, **modalidade** (`tipo` online/presencial/simultâneo) e `instancia`. Esses recortes só existem em `/lotes` (são atributos do bem/lote, não do leilão).
+- **Resposta ideal:** `/leiloes` aceitar `?uf=&cidade=&categoria=&tipo=&instancia=` (derivando dos lotes do leilão ou de metadados agregados), retornando os leilões que possuem lotes correspondentes.
+- **Sugestão:** adicionar esses params em `/leiloes` (com `JOIN` em lotes) **ou** documentar oficialmente que o recorte por bem é feito em `/lotes`. *A POC contornou criando a página global `/lotes` (busca por lotes com os filtros ricos).*
+
+### P2 — Facets de `categorias` com shape inconsistente
+- **Tela/fluxo:** chips de categoria (Home) + select de categoria (filtros de lote).
+- **Endpoint:** `GET /api/website/v2/buscador/filtros`.
+- **Faltou:** `categorias` retorna `{ id: "Veículos", nome: null, total: 209 }` — o **`id` é o nome-string** e `nome` vem `null`. As demais facets (`ufs`, `comitentes`) devem ser conferidas pelo mesmo padrão.
+- **Resposta ideal:** `{ id: <id|slug estável>, nome: "Veículos", total: 209 }` consistente, e o filtro `?categoria=` aceitar esse `id`.
+- **Sugestão:** padronizar todas as facets como `{ id, nome, total }`. Hoje o filtro `?categoria=Veículos` funciona por coincidência (casa com `b.tipoPai` string); `?categoria=1` (id numérico) retorna 0.
+
+---
+
+## 🟠 Melhoria importante
+
+### P3 — Sem endpoint de lote anterior/próximo
+- **Tela/fluxo:** detalhe do lote (navegação ‹ anterior / próximo ›).
+- **Endpoint:** não existe.
+- **Faltou:** vizinhos do lote dentro do leilão.
+- **Resposta ideal:** `GET /lotes/{id}/vizinhos` → `{ anterior: {id,slug}, proximo: {id,slug} }`.
+- **Sugestão:** a POC busca até 60 lotes do leilão e calcula o índice (custoso e impreciso pra leilões grandes). Um endpoint dedicado resolve.
+
+### P4 — Sessão do arrematante sem refresh token
+- **Tela/fluxo:** login / manter sessão.
+- **Endpoint:** `POST /api/auth`.
+- **Faltou:** refresh token. O JWT expira (~1h) e força novo login.
+- **Resposta ideal:** `POST /api/auth/refresh` devolvendo novo JWT.
+- **Sugestão:** emitir refresh token (httpOnly) no login.
+
+### P5 — Área logada com endpoints heterogêneos
+- **Tela/fluxo:** `/conta` (favoritos, lances, habilitações).
+- **Endpoints:** `/api/arrematantes/meusFavoritos`, `/api/arrematantes/service/historico/lances`, `/api/arrematantes/service/leiloes`, `/api/public/arrematantes/*` (mistura de prefixos e envelopes).
+- **Faltou:** um namespace consolidado e shapes padronizados pra área logada do site.
+- **Resposta ideal:** `/api/website/v2/me/{favoritos,lances,habilitacoes,propostas,documentos}` com o envelope padrão da V2.
+- **Sugestão:** criar uma fachada `/me/*` reusando os endpoints existentes (sem duplicar regra), com escopo derivado do token.
+
+### P6 — WebSocket sem URL pública por tenant (e sem ambiente de teste em dev)
+- **Tela/fluxo:** lance ao vivo (tempo real).
+- **Endpoint:** `GET /api/public/globalconfigs` entrega `clientId`, mas **não** a URL do gateway.
+- **Faltou:** `realtimeUrl` por tenant + um ambiente WS testável em dev (em dev a POC cai em polling).
+- **Resposta ideal:** `GET /site/config` expor `{ realtime: { url, clientId } }`.
+- **Sugestão:** incluir `realtimeUrl` no `site/config`; o protocolo de eventos já está documentado no `GUIA-WEBSITE-V2.md §9`.
+
+---
+
+## 🟡 Dados de ambiente (não é bug de API)
+
+### P7 — Sem conta de arrematante de teste no tenant
+- **Fluxo:** login, conta, lance, habilitação.
+- **Faltou:** credencial de arrematante dev (como existe `admin/123456` no Console). O BFF de login foi validado só com erro (retorna `401` estruturado corretamente).
+- **Sugestão:** fornecer um arrematante de teste para validar a área logada ponta a ponta.
+
+### P8 — Branding do site não preenchido no tenant
+- **Tela:** shell (cores/logo/nome).
+- **Endpoint:** `GET /site/config`.
+- **Faltou:** chaves `site.*` preenchidas (cores caem no default `#1A4DB3`; `siteName` null). O **logo funcionou** via fallback `empresa.logomarca`.
+- **Sugestão:** preencher as chaves `site.*`/`leiloeiro.*` (já registradas no `ConfigurationSetup`) no admin do tenant.
+
+### P9 — Banners e popup vazios no tenant
+- **Tela:** Home (banner/popup).
+- **Endpoint:** `GET /site/banners`.
+- **Faltou:** banners `secao=home` e `secao=popup` cadastrados (a POC mostra um hero institucional de fallback).
+- **Sugestão:** cadastrar banners de exemplo para validar visualmente.
+
+---
+
+## ✅ O que a API entregou perfeitamente (sem pendência)
+
+`/site/config` (com fallbacks), `/site/menus`, `/site/leiloeiro`, `/leiloes` + detalhe (campos ricos:
+status, modalidade, datas, leiloeiro, `_urls.edital/auditorio`, comitentes), `/lotes` + detalhe (bem
+nested, fotos, veículo com marca/modelo/cor/combustível, placa/chassi mascarados), **`/lotes/{id}/lances-publicos`**
+(histórico real com apelido/valor/data — validado no lote 986 com 11 lances), filtros de lote completos
+(categoria, uf, cidade, comitente, faixa de valor, **imóvel** área/vagas/ocupado/finalidade, **veículo**
+marca/modelo/ano/km/combustível/cor, **geo** bbox/raio), `/buscador/filtros`, `/agenda/proximos`,
+`/comitentes`, `/contato` (cria atendimento real) + `/contato/setores` + `/newsletter`, envelope e erros
+padronizados. **Spec automatizado: 25/25 passam** (`npm run spec`).
