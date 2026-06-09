@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE } from '@/lib/config';
+import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE, REFRESH_COOKIE } from '@/lib/config';
 
 export async function POST() {
   const jwt = cookies().get(JWT_COOKIE)?.value;
@@ -16,5 +16,6 @@ export async function POST() {
   }
   const out = NextResponse.json({ ok: true });
   out.cookies.set(JWT_COOKIE, '', { path: '/', maxAge: 0 });
+  out.cookies.set(REFRESH_COOKIE, '', { path: '/', maxAge: 0 });
   return out;
 }

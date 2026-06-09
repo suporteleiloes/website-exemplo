@@ -11,5 +11,6 @@ export const V2 = `${API_BASE}/api/website/v2`;
 // Header multi-tenant obrigatório em TODA chamada (resolve o banco do leiloeiro).
 export const TENANT_HEADER = 'Uloc-Mi';
 
-// Nome do cookie httpOnly onde guardamos o JWT do arrematante (BFF — nunca exposto ao browser).
-export const JWT_COOKIE = 'sl_jwt';
+// Cookies httpOnly do BFF — nunca expostos ao browser.
+export const JWT_COOKIE = 'sl_jwt';        // access token (JWT, 24h)
+export const REFRESH_COOKIE = 'sl_refresh'; // refresh token (opaco, 30 dias)

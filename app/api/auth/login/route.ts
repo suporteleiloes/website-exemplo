@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE } from '@/lib/config';
+import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE, REFRESH_COOKIE } from '@/lib/config';
 
 // BFF: recebe {user, pass}, autentica na API (/api/auth) e guarda o JWT num cookie httpOnly.
 // O browser NUNCA vê o token (mitiga XSS — GUIA §13).
@@ -24,12 +24,15 @@ export async function POST(req: NextRequest) {
     ok: true,
     user: { id: data.user?.id, name: data.user?.name, username: data.user?.username, roles: data.user?.roles },
   });
-  out.cookies.set(JWT_COOKIE, data.token, {
+  const cookieBase = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'lax' as const,
     path: '/',
-    maxAge: 60 * 60, // ~1h (JWT sem refresh — ver PENDENCIAS)
-  });
+  };
+  out.cookies.set(JWT_COOKIE, data.token, { ...cookieBase, maxAge: 60 * 60 * 24 }); // access 24h
+  if (data.refreshToken) {
+    out.cookies.set(REFRESH_COOKIE, data.refreshToken, { ...cookieBase, maxAge: 60 * 60 * 24 * 30 }); // refresh 30d
+  }
   return out;
 }
