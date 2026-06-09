@@ -41,12 +41,11 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 - **Resposta ideal:** `GET /lotes/{id}/vizinhos` → `{ anterior: {id,slug}, proximo: {id,slug} }`.
 - **Sugestão:** a POC busca até 60 lotes do leilão e calcula o índice (custoso e impreciso pra leilões grandes). Um endpoint dedicado resolve.
 
-### P4 — Sessão do arrematante sem refresh token
-- **Tela/fluxo:** login / manter sessão.
-- **Endpoint:** `POST /api/auth`.
-- **Faltou:** refresh token. O JWT expira (~1h) e força novo login.
-- **Resposta ideal:** `POST /api/auth/refresh` devolvendo novo JWT.
-- **Sugestão:** emitir refresh token (httpOnly) no login.
+### P4 — ✅ RESOLVIDO — Refresh token
+> Implementado. O JWT é **24h** (não 1h — era o cookie da POC que estava 1h, já corrigido pra 24h).
+> Login agora devolve `refreshToken` (opaco, 30 dias). `POST /api/auth/refresh { refreshToken }` →
+> novo access + novo refresh (rotação de uso único; o anterior → 401). Hash sha256 no servidor,
+> revogável no logout, isolado por tenant. A POC guarda os 2 cookies httpOnly + route `/api/auth/refresh`.
 
 ### P5 — ✅ RESOLVIDO — Área logada com endpoints heterogêneos
 > Criada a fachada **`/api/website/v2/me/*`** (`MeController`) reusando os repositórios existentes (sem duplicar regra, sem mexer nos endpoints antigos): `GET /me`, `/me/favoritos`, `/me/lances`, `/me/habilitacoes`, `/me/propostas`, `/me/documentos`. Escopo derivado do token. A POC `/conta` já consome. Validado E2E (GUILHERME: `/me` → perfil real; `/me/lances` e `/me/habilitacoes` com dados reais).
@@ -86,8 +85,15 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 - **Contas de teste (tenant `localhost`/lancevip, senha `Teste@123`):** `TONINHO1` e `GUILHERME` (aprovados), `LEAO1` (reprovado).
 - **Validado E2E pela POC:** login → `/conta` (33 leilões/habilitações reais) → habilitar no leilão 2653 → lance aprovado (id 96335, R$ 310.000); reprovado bloqueado; auto-cobertura de lance bloqueada (regra correta); rate-limit de login ativo.
 
-### P10 — GET status de habilitação exige sessão de cliente
-- **Endpoint:** `GET /api/public/arrematantes/service/leiloes/{id}/habilitar` retorna `401 Invalid User Client Session` mesmo com Bearer válido (o `POST` habilitar funciona normal).
+### P10 — ✅ RESOLVIDO (era artefato de teste) — "Invalid User Client Session"
+> Investigado a fundo: o claim `client` do JWT só diverge ("local" vs "localhost") quando login e
+> validação usam caminhos de resolução de tenant diferentes. Os caminhos REAIS (header `Uloc-Mi` e
+> `Referer`) já produzem o slug canônico e validam cross-path — em produção sempre tem `Uloc-Mi`/Referer,
+> então funciona. O único caso "local" era o degenerado SEM nenhum header (default `USER_CLIENT=local`
+> do `.env.local`), que eu disparei nos meus próprios testes curl. **Fix = só o default de dev**
+> (`.env.local` → `localhost`); o `public/index.php` (entry point multi-tenant) ficou **intocado** →
+> zero risco. Para integração server-to-server: sempre enviar `Uloc-Mi`.
+> *(O GET de status de habilitação compartilha a mesma causa — resolvido junto.)*
 - **Sugestão:** aceitar o mesmo Bearer JWT no GET de status (hoje parece exigir um header/sessão de cliente adicional).
 
 ## 🟡 Dados de ambiente (não é bug de API)
