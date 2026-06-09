@@ -4,22 +4,12 @@ import Galeria from '@/components/Galeria';
 import LanceBox from '@/components/LanceBox';
 import LoteCard from '@/components/LoteCard';
 import { BadgeLote } from '@/components/Badge';
-import { getLote, getLotes, ApiException } from '@/lib/api';
+import { getLote, getLotes, getLoteVizinhos, getSiteConfig, ApiException } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
-import { API_BASE, TENANT, TENANT_HEADER } from '@/lib/config';
 import { moeda } from '@/lib/format';
 import type { Lote } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
-
-async function getClientId(): Promise<string | undefined> {
-  try {
-    const r = await fetch(`${API_BASE}/api/public/globalconfigs`, { headers: { [TENANT_HEADER]: TENANT }, next: { revalidate: 300 } });
-    if (!r.ok) return undefined;
-    const d = await r.json();
-    return d?.clientId ? String(d.clientId) : undefined;
-  } catch { return undefined; }
-}
 
 export default async function LotePage({ params }: { params: { idOrSlug: string } }) {
   let lote: Lote;
@@ -31,17 +21,19 @@ export default async function LotePage({ params }: { params: { idOrSlug: string 
   const leilaoId = leilao?.id;
 
   const safe = async <T,>(p: Promise<T>, fb: T) => { try { return await p; } catch { return fb; } };
-  const [irmaosData, user, clientId] = await Promise.all([
-    leilaoId ? safe(getLotes({ leilao: leilaoId, sortBy: 'numero', order: 'asc', limit: 60 }), { result: [] as Lote[] } as any) : Promise.resolve({ result: [] as Lote[] }),
+  const [vizinhos, relacionadosData, user, config] = await Promise.all([
+    // P3: endpoint dedicado de vizinhos (não baixa a lista inteira de lotes).
+    safe(getLoteVizinhos(lote.id), { anterior: null, proximo: null }),
+    leilaoId ? safe(getLotes({ leilao: leilaoId, limit: 5 }), { result: [] as Lote[] } as any) : Promise.resolve({ result: [] as Lote[] }),
     getSessionUser().catch(() => null),
-    getClientId(),
+    safe(getSiteConfig(), null as any),
   ]);
 
-  const irmaos: Lote[] = irmaosData.result;
-  const idx = irmaos.findIndex((l) => l.id === lote.id);
-  const anterior = idx > 0 ? irmaos[idx - 1] : null;
-  const proximo = idx >= 0 && idx < irmaos.length - 1 ? irmaos[idx + 1] : null;
-  const relacionados = irmaos.filter((l) => l.id !== lote.id).slice(0, 4);
+  const anterior = vizinhos.anterior;
+  const proximo = vizinhos.proximo;
+  const relacionados = (relacionadosData.result as Lote[]).filter((l) => l.id !== lote.id).slice(0, 4);
+  // P6: realtime (url + clientId) vem do /site/config.
+  const realtime = (config?.realtime ?? { url: null, clientId: null }) as { url: string | null; clientId: string | null };
 
   const podeLance = lote.status === 1 || lote.status === 2; // aberto / em pregão
   const titulo = bem?.siteTitulo || lote.descricao || `Lote ${lote.numeroString || lote.numero}`;
@@ -93,7 +85,8 @@ export default async function LotePage({ params }: { params: { idOrSlug: string 
               podeLance={podeLance}
               logado={!!user}
               loginHash={user?.loginHash}
-              clientId={clientId}
+              clientId={realtime.clientId ?? undefined}
+              realtimeUrl={realtime.url ?? undefined}
             />
           </div>
 

@@ -97,6 +97,9 @@ export const getLotes = (params?: Params) => apiGet<Paginated<Lote>>('/lotes', {
 export const getLote = (idOrSlug: string | number) => apiGet<Lote>(`/lotes/${idOrSlug}`, { revalidate: 10 });
 export const getLancesPublicos = (id: number) => apiGet<{ result: LancePublico[]; total: number }>(`/lotes/${id}/lances-publicos`, { revalidate: 0 });
 
+export interface VizinhoRef { id: number; slug: string | null; numero: number | null }
+export const getLoteVizinhos = (id: number) => apiGet<{ anterior: VizinhoRef | null; proximo: VizinhoRef | null }>(`/lotes/${id}/vizinhos`, { revalidate: 15 });
+
 export const getAgenda = (mes: number, ano: number) => apiGet<unknown>('/agenda', { params: { mes, ano }, revalidate: 30 });
 export const getAgendaProximos = (limit = 5) => apiGet<{ result: Leilao[] }>('/agenda/proximos', { params: { limit }, revalidate: 30 });
 export const getComitentes = (params?: Params) => apiGet<Paginated<Comitente>>('/comitentes', { params, revalidate: 120 });

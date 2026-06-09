@@ -16,6 +16,7 @@ interface Props {
   logado: boolean;
   loginHash?: string;
   clientId?: string;
+  realtimeUrl?: string;     // de site/config.realtime.url (P6)
 }
 
 // Área de lance + histórico + tempo real. Lance é REST (POST via BFF /api/proxy);
@@ -49,6 +50,7 @@ export default function LanceBox(p: Props) {
     carregarLances();
     // Tempo real: atualiza ao receber evento `lance` deste lote; senão faz polling.
     const h = connectRealtime({
+      url: p.realtimeUrl,
       loginHash: p.loginHash,
       clientId: p.clientId,
       onStatus: (s) => setRtOn(s === 'open'),

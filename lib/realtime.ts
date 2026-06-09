@@ -18,14 +18,16 @@ export interface RealtimeHandle {
 }
 
 interface ConnectOpts {
+  url?: string;        // URL do gateway (de site/config.realtime.url); cai no env REALTIME_URL.
   loginHash?: string;
   clientId?: string;
   onEvent: (ev: RealtimeEvent) => void;
   onStatus?: (s: 'open' | 'closed' | 'error') => void;
 }
 
-export function connectRealtime({ loginHash, clientId, onEvent, onStatus }: ConnectOpts): RealtimeHandle {
-  if (!REALTIME_URL) {
+export function connectRealtime({ url, loginHash, clientId, onEvent, onStatus }: ConnectOpts): RealtimeHandle {
+  const base = url || REALTIME_URL;
+  if (!base) {
     return { close: () => {}, enabled: false };
   }
   let ws: WebSocket | null = null;
@@ -36,7 +38,7 @@ export function connectRealtime({ loginHash, clientId, onEvent, onStatus }: Conn
     const qs = new URLSearchParams();
     if (loginHash) qs.set('token', loginHash);
     if (clientId) qs.set('client', clientId);
-    ws = new WebSocket(`${REALTIME_URL}?${qs.toString()}`);
+    ws = new WebSocket(`${base}?${qs.toString()}`);
 
     ws.onopen = () => {
       onStatus?.('open');

@@ -17,7 +17,9 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 - **Resposta ideal:** `/leiloes` aceitar `?uf=&cidade=&categoria=&tipo=&instancia=` (derivando dos lotes do leilão ou de metadados agregados), retornando os leilões que possuem lotes correspondentes.
 - **Sugestão:** adicionar esses params em `/leiloes` (com `JOIN` em lotes) **ou** documentar oficialmente que o recorte por bem é feito em `/lotes`. *A POC contornou criando a página global `/lotes` (busca por lotes com os filtros ricos).*
 
-### P2 — Facets de `categorias` com shape inconsistente
+### P2 — ✅ RESOLVIDO — Facets de `categorias` com shape inconsistente
+> Corrigido: `/buscador/filtros` agora retorna `{id, nome, total}` em todas as facets. Subcategorias trazem o nome do TipoBem (antes só id numérico, sem como exibir). POC já usa o `nome`.
+
 - **Tela/fluxo:** chips de categoria (Home) + select de categoria (filtros de lote).
 - **Endpoint:** `GET /api/website/v2/buscador/filtros`.
 - **Faltou:** `categorias` retorna `{ id: "Veículos", nome: null, total: 209 }` — o **`id` é o nome-string** e `nome` vem `null`. As demais facets (`ufs`, `comitentes`) devem ser conferidas pelo mesmo padrão.
@@ -28,7 +30,9 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 
 ## 🟠 Melhoria importante
 
-### P3 — Sem endpoint de lote anterior/próximo
+### P3 — ✅ RESOLVIDO — Sem endpoint de lote anterior/próximo
+> Adicionado `GET /api/website/v2/lotes/{id}/vizinhos` → `{anterior, proximo}` (2 queries). A POC usa no detalhe do lote (não baixa mais 60 lotes).
+
 - **Tela/fluxo:** detalhe do lote (navegação ‹ anterior / próximo ›).
 - **Endpoint:** não existe.
 - **Faltou:** vizinhos do lote dentro do leilão.
@@ -49,7 +53,9 @@ Formato: **tela/fluxo · endpoint · o que faltou · resposta ideal · sugestão
 - **Resposta ideal:** `/api/website/v2/me/{favoritos,lances,habilitacoes,propostas,documentos}` com o envelope padrão da V2.
 - **Sugestão:** criar uma fachada `/me/*` reusando os endpoints existentes (sem duplicar regra), com escopo derivado do token.
 
-### P6 — WebSocket sem URL pública por tenant (e sem ambiente de teste em dev)
+### P6 — ✅ PARCIALMENTE RESOLVIDO — WebSocket sem URL pública por tenant
+> `GET /site/config` agora expõe `realtime: { url, clientId }` (url via GlobalConfig `site.realtime.url`; clientId = domínio do tenant). A POC consome. **Falta** (decisão/infra): preencher a `site.realtime.url` do tenant e ter um gateway WS testável em dev.
+
 - **Tela/fluxo:** lance ao vivo (tempo real).
 - **Endpoint:** `GET /api/public/globalconfigs` entrega `clientId`, mas **não** a URL do gateway.
 - **Faltou:** `realtimeUrl` por tenant + um ambiente WS testável em dev (em dev a POC cai em polling).

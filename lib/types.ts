@@ -209,6 +209,7 @@ export interface SiteConfig {
   redesSociais: Record<string, string | null>;
   analytics: Record<string, string | null>;
   features: { permitirPropostas: boolean; permitirFavoritos: boolean; permitirCadastro: boolean; permitirChat: boolean };
+  realtime?: { url: string | null; clientId: string | null };
 }
 
 export interface Banner {
