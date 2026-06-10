@@ -75,3 +75,32 @@ export async function enviarMensagem(slug: string, sessionId: string, text: stri
     return await r.json();
   } catch { return { ok: false, motivo: 'erro_rede' }; }
 }
+
+// ── Variantes SSR (server component) — fetcham direto da API com header tenant,
+// já que o proxy usa URL relativa que não resolve fora do browser. ──
+import { API_BASE, TENANT, TENANT_HEADER } from './config';
+
+export async function getAjudaServer(slug: string, busca = ''): Promise<{ colecoes: AjudaColecao[]; artigos: AjudaArtigoRef[] }> {
+  try {
+    const qs = busca ? `?busca=${encodeURIComponent(busca)}` : '';
+    const r = await fetch(`${API_BASE}/api/public/widget/${slug}/ajuda${qs}`, {
+      headers: { [TENANT_HEADER]: TENANT, Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!r.ok) return { colecoes: [], artigos: [] };
+    const d = await r.json();
+    return { colecoes: d.colecoes || [], artigos: d.artigos || [] };
+  } catch { return { colecoes: [], artigos: [] }; }
+}
+
+export async function getArtigoServer(slug: string, id: number): Promise<AjudaArtigo | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/public/widget/${slug}/ajuda/${id}`, {
+      headers: { [TENANT_HEADER]: TENANT, Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.artigo || null;
+  } catch { return null; }
+}
