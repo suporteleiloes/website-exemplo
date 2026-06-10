@@ -55,6 +55,19 @@ export async function getArtigo(slug: string, id: number): Promise<AjudaArtigo |
   } catch { return null; }
 }
 
+// ── Mensagens proativas / outbound (estilo Intercom Messages) ──
+export interface ProativaRegra { evento: 'tempo' | 'pagina' | 'segmento'; valor: number | string }
+export interface Proativa { id: number; titulo: string; corpo: string; regra: ProativaRegra }
+
+export async function getProativas(slug: string): Promise<Proativa[]> {
+  try {
+    const r = await fetch(`${P}/${slug}/proativas`, { cache: 'no-store' });
+    if (!r.ok) return [];
+    const d = await r.json();
+    return Array.isArray(d?.proativas) ? d.proativas : [];
+  } catch { return []; }
+}
+
 export interface ConversaMsg { id?: number; role: 'user' | 'support'; text: string }
 
 export async function getHistorico(slug: string, sessionId: string): Promise<{ status: string | null; messages: ConversaMsg[] }> {

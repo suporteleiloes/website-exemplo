@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  getBootstrap, getAjuda, getArtigo, getHistorico, enviarMensagem,
-  type WidgetBootstrap, type AjudaArtigoRef, type AjudaColecao, type AjudaArtigo, type ConversaMsg,
+  getBootstrap, getAjuda, getArtigo, getHistorico, enviarMensagem, getProativas,
+  type WidgetBootstrap, type AjudaArtigoRef, type AjudaColecao, type AjudaArtigo, type ConversaMsg, type Proativa,
 } from '@/lib/widget';
 
 type View = 'inicio' | 'conversa' | 'ajuda' | 'artigo' | 'novidades';
@@ -49,6 +49,9 @@ export default function Messenger({ slug }: { slug: string }) {
   const [colecoes, setColecoes] = useState<AjudaColecao[]>([]);
   const [artigos, setArtigos] = useState<AjudaArtigoRef[]>([]);
   const [artigo, setArtigo] = useState<AjudaArtigo | null>(null);
+  // proativas (outbound)
+  const [proativa, setProativa] = useState<Proativa | null>(null);
+  const [proativaFechada, setProativaFechada] = useState(false);
 
   // bootstrap + session
   useEffect(() => {
@@ -61,6 +64,54 @@ export default function Messenger({ slug }: { slug: string }) {
   }, [slug]);
 
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, view]);
+
+  // ── Mensagens proativas / outbound: busca as regras e avalia no client ──
+  // (tempo na página, path da URL, segmento via localStorage). A 1ª regra que
+  // casa vira um balão discreto acima do launcher. Só dispara com o widget
+  // fechado e se o visitante não dispensou.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let cancelado = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    // Segmento simples: 1ª visita (novo) × recorrente, persistido em localStorage.
+    const jaVisitou = localStorage.getItem('copilotsl_visitou') === '1';
+    const segmento = jaVisitou ? 'retornantes' : 'novos';
+    localStorage.setItem('copilotsl_visitou', '1');
+
+    getProativas(slug).then((lista) => {
+      if (cancelado || !lista.length) return;
+      const url = window.location.pathname + window.location.search;
+
+      const exibir = (p: Proativa) => {
+        if (cancelado) return;
+        setProativa((atual) => atual ?? p); // mantém a 1ª que disparou
+      };
+
+      for (const p of lista) {
+        const { evento, valor } = p.regra || ({} as Proativa['regra']);
+        if (evento === 'pagina') {
+          const alvo = String(valor || '').trim();
+          if (alvo === '' || url.toLowerCase().includes(alvo.toLowerCase())) exibir(p);
+        } else if (evento === 'segmento') {
+          const alvo = String(valor || 'todos');
+          if (alvo === 'todos' || alvo === segmento) exibir(p);
+        } else {
+          // tempo (default): aguarda N segundos na página
+          const segs = Math.max(0, parseInt(String(valor ?? 0), 10) || 0);
+          timers.push(setTimeout(() => exibir(p), segs * 1000));
+        }
+      }
+    });
+
+    return () => { cancelado = true; timers.forEach(clearTimeout); };
+  }, [slug]);
+
+  function abrirDaProativa() {
+    setProativa(null);
+    setAberto(true);
+    abrirConversa();
+  }
 
   const carregarHistorico = useCallback(async () => {
     if (!sessionRef.current) return;
@@ -286,6 +337,29 @@ export default function Messenger({ slug }: { slug: string }) {
             })}
           </div>
           <div className="bg-[#0c1322] pb-2 text-center text-[10px] text-slate-600">Powered by {boot.agente}</div>
+        </div>
+      )}
+
+      {/* MENSAGEM PROATIVA (outbound) — balão discreto acima do launcher */}
+      {!aberto && proativa && !proativaFechada && (
+        <div className="relative w-[300px] max-w-[80vw] animate-[fadeIn_.25s_ease]" data-test="proativa-balao">
+          <button
+            onClick={() => { setProativa(null); setProativaFechada(true); }}
+            aria-label="Dispensar"
+            className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1b2740] text-xs text-slate-300 shadow-md hover:text-white"
+          >✕</button>
+          <button
+            onClick={abrirDaProativa}
+            className="flex w-full items-start gap-2.5 rounded-2xl border border-white/10 bg-[#0c1322] p-3.5 text-left shadow-2xl transition hover:border-white/20"
+          >
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: grad }}>
+              {boot.agente.slice(0, 2)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-100">{proativa.titulo}</p>
+              <p className="mt-0.5 text-xs leading-snug text-slate-400">{proativa.corpo}</p>
+            </div>
+          </button>
         </div>
       )}
 
