@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { moeda } from '@/lib/format';
-import { connectRealtime, type RealtimeEvent } from '@/lib/realtime';
+import { connectRealtime, criarDedup, type RealtimeEvent } from '@/lib/realtime';
 import type { LancePublico } from '@/lib/types';
 
 interface Props {
@@ -48,17 +48,24 @@ export default function LanceBox(p: Props) {
 
   useEffect(() => {
     carregarLances();
+    // Frames chegam DUPLICADOS (o cliente costuma manter ~2 conexões) — sem dedup por id
+    // do lance a lista duplica na tela.
+    const novo = criarDedup();
     // Tempo real: atualiza ao receber evento `lance` deste lote; senão faz polling.
     const h = connectRealtime({
       url: p.realtimeUrl,
       loginHash: p.loginHash,
       clientId: p.clientId,
+      // Entrar na sala do leilão é o que faz o socket receber alguma coisa.
+      // Sem isto ele conecta, responde OK e fica mudo.
+      channels: [`leilao:${p.leilaoId}`],
       onStatus: (s) => setRtOn(s === 'open'),
       onEvent: (ev: RealtimeEvent) => {
         const d: any = ev.data || {};
         const loteEv = d.lote?.id ?? d.pregao?.lote?.id;
         if (ev.type === 'lance' && loteEv === p.loteId) {
           const lc = d.lote?.lance;
+          if (!novo(lc?.id)) return; // frame duplicado
           if (lc?.valor) setAtual(lc.valor);
           carregarLances();
         }
@@ -70,7 +77,7 @@ export default function LanceBox(p: Props) {
     }
     return () => { h.close(); if (pollRef.current) clearInterval(pollRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.loteId]);
+  }, [p.loteId, p.leilaoId]);
 
   async function enviarLance(e: React.FormEvent) {
     e.preventDefault();
@@ -84,7 +91,16 @@ export default function LanceBox(p: Props) {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setMsg({ tipo: 'erro', texto: d?.message || `Não foi possível enviar o lance (HTTP ${r.status}).` });
+        // `#ER-COMMIT` = corrida perdida: outro arrematante (ou um lance automático) cobriu
+        // no mesmo instante. NÃO é erro fatal — recarregue o valor e deixe tentar de novo.
+        if (typeof d?.message === 'string' && d.message.includes('#ER-COMMIT')) {
+          await carregarLances();
+          setMsg({ tipo: 'erro', texto: 'Outro lance chegou primeiro. O valor foi atualizado — tente novamente.' });
+        } else {
+          // Demais 400 trazem mensagem de negócio em pt-br (tempo encerrado, não pode cobrir
+          // o próprio lance, valor abaixo do incremento, sem habilitação).
+          setMsg({ tipo: 'erro', texto: d?.message || `Não foi possível enviar o lance (HTTP ${r.status}).` });
+        }
       } else {
         setMsg({ tipo: 'ok', texto: 'Lance enviado!' });
         carregarLances();
