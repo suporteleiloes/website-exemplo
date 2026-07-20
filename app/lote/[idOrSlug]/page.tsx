@@ -11,7 +11,8 @@ import type { Lote } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function LotePage({ params }: { params: { idOrSlug: string } }) {
+export default async function LotePage(props: { params: Promise<{ idOrSlug: string }> }) {
+  const params = await props.params;
   let lote: Lote;
   try { lote = await getLote(params.idOrSlug); }
   catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }

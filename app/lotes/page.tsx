@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic';
 type SP = Record<string, string | undefined>;
 
 // Busca GLOBAL de lotes (todos os leilões) — usa os filtros ricos de /lotes.
-export default async function LotesPage({ searchParams }: { searchParams: SP }) {
+export default async function LotesPage(props: { searchParams: Promise<SP> }) {
+  const searchParams = await props.searchParams;
   const params: Record<string, string | number | undefined> = {
     limit: 16, page: searchParams.page ? Number(searchParams.page) : 1, somenteAtivos: 'true' as any,
     search: searchParams.search, categoria: searchParams.categoria, subcategoria: searchParams.subcategoria,

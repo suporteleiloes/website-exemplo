@@ -8,7 +8,8 @@ import { ApiException } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EventoPage({ params }: { params: { idOrSlug: string } }) {
+export default async function EventoPage(props: { params: Promise<{ idOrSlug: string }> }) {
+  const params = await props.params;
   let evento;
   try {
     evento = await getEvento(params.idOrSlug);
@@ -30,11 +31,10 @@ export default async function EventoPage({ params }: { params: { idOrSlug: strin
   return (
     <div className="container-page space-y-6">
       <nav className="text-sm text-gray-500"><a href="/venda-direta" className="hover:text-marca">Venda Direta</a> › <span>{evento.titulo}</span></nav>
-
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         {img && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt={evento.titulo || ''} className="h-48 w-full object-cover" />
+          (<img src={img} alt={evento.titulo || ''} className="h-48 w-full object-cover" />)
         )}
         <div className="p-5">
           <div className="flex flex-wrap items-center gap-2">
@@ -65,7 +65,6 @@ export default async function EventoPage({ params }: { params: { idOrSlug: strin
           )}
         </div>
       </section>
-
       <section>
         <h2 className="mb-3 text-lg font-bold text-gray-800">Anúncios deste evento</h2>
         {anuncios.length === 0 ? (

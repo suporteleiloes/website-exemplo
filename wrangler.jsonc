@@ -1,0 +1,26 @@
+{
+  // Cloudflare Worker do site (Next via OpenNext). Ver README §deploy.
+  // Cada site de leiloeiro é um Worker próprio a partir deste template — troque o `name`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sl-site-exemplo",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2024-12-30",
+  // nodejs_compat: o BFF (cookies httpOnly, fetch) roda no runtime Node do Worker.
+  // global_fetch_strictly_public: exigido pelo OpenNext.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  // ISR/incremental cache do Next persistido em R2 (stateless no edge). O bucket é por-site.
+  // Sem isto o ISR não colapsa visitantes entre invocações — e é o cache que segura a API.
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "sl-site-exemplo-cache"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

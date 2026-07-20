@@ -16,7 +16,11 @@ export const dynamic = 'force-dynamic';
 
 type SP = Record<string, string | undefined>;
 
-export default async function LeilaoPage({ params, searchParams }: { params: { idOrSlug: string }; searchParams: SP }) {
+export default async function LeilaoPage(
+  props: { params: Promise<{ idOrSlug: string }>; searchParams: Promise<SP> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   let leilao: Leilao;
   try { leilao = await getLeilao(params.idOrSlug); }
   catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }
