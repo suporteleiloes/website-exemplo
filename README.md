@@ -70,8 +70,9 @@ exemplo-site/
 │   ├── lote/[idOrSlug]/      # detalhe do lote + galeria + lance + histórico + relacionados
 │   ├── login/page.tsx        # login
 │   ├── conta/page.tsx        # área logada (dados, favoritos, lances, habilitados)
-│   ├── api/auth/login        # BFF: autentica e seta cookie httpOnly
-│   ├── api/auth/logout       # BFF: revoga sessão + limpa cookie
+│   ├── api/auth/login        # BFF: autentica e seta cookies httpOnly (access + refresh)
+│   ├── api/auth/refresh      # BFF: troca o refresh token por um novo par (rotação de uso único)
+│   ├── api/auth/logout       # BFF: revoga sessão + limpa cookies
 │   └── api/proxy/[...path]   # BFF: proxy autenticado (anexa JWT do cookie)
 ├── components/               # UI (cards, filtros, galeria, banner, popup, lance, habilitação, auth)
 ├── lib/                      # config, types, api (fetch V2), auth (sessão), realtime (WS), format, img
@@ -90,6 +91,7 @@ exemplo-site/
 | `/lote/[idOrSlug]` | Galeria, specs, dados do veículo, **lance + histórico + tempo real**, anterior/próximo, relacionados | `/lotes/{id}`, `/lotes/{id}/lances-publicos`, `/lotes?leilao=` |
 | `/login` | Login do arrematante | `/api/auth` (via BFF) |
 | `/conta` | Meus dados, favoritos, lances, leilões habilitados | endpoints autenticados (via proxy) |
+| `/quero-vender` | Formulário de quem quer vender bens (vira lead no CRM + Negócio no funil) | `/quero-vender`, `/site/config` |
 
 ## 6. Componentes principais
 
@@ -102,9 +104,9 @@ exemplo-site/
 
 **Públicos (Website V2):** `/site/config`, `/site/menus`, `/site/banners`, `/site/leiloeiro`,
 `/buscador/filtros`, `/leiloes`, `/leiloes/{id}`, `/lotes`, `/lotes/{id}`, `/lotes/{id}/lances-publicos`,
-`/agenda/proximos`, `/comitentes`, `/contato/setores`, `/contato`, `/newsletter`.
+`/agenda/proximos`, `/comitentes`, `/contato/setores`, `/contato`, `/newsletter`, `/quero-vender`.
 
-**Autenticados (reuso, via BFF proxy):** `/api/auth`, `/api/auth/logout`, `/api/userCredentials`,
+**Autenticados (reuso, via BFF proxy):** `/api/auth`, `/api/auth/refresh`, `/api/auth/logout`, `/api/userCredentials`,
 `/api/lotes/{id}/lance`, `/api/public/arrematantes/service/leiloes/{id}/habilitar`,
 `/api/arrematantes/meusFavoritos`, `/api/arrematantes/service/historico/lances`,
 `/api/arrematantes/service/leiloes`, `/api/public/globalconfigs` (clientId p/ WS).
@@ -114,12 +116,27 @@ exemplo-site/
 Padrão **BFF** (o JWT nunca chega ao browser — mitiga XSS):
 
 1. `LoginForm` → `POST /api/auth/login` (route handler) → chama `POST /api/auth` na API.
-2. Sucesso → grava o JWT num **cookie httpOnly** (`sl_jwt`) e devolve só dados não-sensíveis.
+2. Sucesso → grava o **access JWT** num cookie httpOnly (`sl_jwt`) e o **refresh token** noutro cookie
+   httpOnly (`sl_refresh`), e devolve só dados não-sensíveis. O `maxAge` de cada cookie é derivado das
+   datas `expires`/`refreshExpires` da resposta (`lib/cookies.ts`) — sem TTL hardcoded no front.
 3. Server Components leem o cookie via `lib/auth.ts` (`getSessionUser` → `GET /api/userCredentials`).
 4. Chamadas autenticadas do browser passam por `/api/proxy/[...path]`, que anexa o `Bearer` server-side.
-5. Logout → `POST /api/auth/logout` revoga a sessão e limpa o cookie.
+5. Renovação → `POST /api/auth/refresh` (route handler) → chama `POST /api/auth/refresh` na API com o
+   cookie `sl_refresh`; recebe `{ token, expires, refreshToken, refreshExpires }` e regrava os dois
+   cookies. Refresh inválido/expirado → 401 + cookies limpos (sessão encerrada).
+6. Logout → `POST /api/auth/logout` revoga a sessão (invalida também o refresh) e limpa os dois cookies.
 
-> JWT expira em ~1h **sem refresh token** (lacuna da API — ver PENDENCIAS).
+> **Refresh token existe e a POC já o usa.** Contrato da API (decisão de 2026-06-09): access JWT de
+> **24h** + refresh token **opaco de 30 dias, de uso único** (rotacionado a cada troca — o anterior passa
+> a dar 401). Endpoint `POST /api/auth/refresh` com body `{ "refreshToken": "..." }`, header `Uloc-Mi`,
+> **sem** `Authorization`. TTLs configuráveis por tenant (`auth.access_token.ttl`,
+> `auth.refresh_token.ttl`, `auth.refresh_token.enabled`). Detalhes em
+> `../api-v2/docs/openapi/GUIA-WEBSITE-V2.md` §2 ("Renovar a sessão").
+>
+> Escopo do que a POC implementa: login/cadastro guardam o refresh, a rota BFF `/api/auth/refresh` faz a
+> troca e o logout limpa tudo. O que **ainda não** está implementado é o *disparo automático* — não há
+> retry transparente no `/api/proxy` nem timer de renovação; hoje a renovação precisa ser chamada
+> explicitamente (ex.: ao receber 401). Num site real, plugar isso no proxy é o passo seguinte.
 
 ## 9. Fluxo de lance
 
@@ -151,14 +168,19 @@ Sem `REALTIME_URL`, cai em **polling** de `/lances-publicos` a cada 8s. O `clien
 ## 13. Pendências encontradas na API
 
 Lista completa e estruturada em [`PENDENCIAS-API.md`](./PENDENCIAS-API.md). Resumo: `/leiloes` não
-filtra por UF/cidade/categoria/modalidade; sem endpoint de lote anterior/próximo; sem refresh token;
-WS sem URL pública por tenant em dev; sem conta de arrematante de teste pra validar a área logada;
+filtra por UF/cidade/categoria/modalidade; WS sem URL pública por tenant em dev; sem conta de arrematante de teste pra validar a área logada;
 ids de `categoria` do buscador podem não bater com o filtro `?categoria=`.
+
+> Já **resolvido** na API (não é mais pendência): **refresh token** (`POST /api/auth/refresh`, access 24h
+> + refresh opaco 30 dias com rotação de uso único — P4), `/lotes/{id}/vizinhos` (P3) e a fachada
+> `/api/website/v2/me/*` (P5). A POC consome os três.
 
 ## 14. Melhorias recomendadas
 
-Ver PENDENCIAS. Destaques: namespace consolidado `/api/website/v2/me/*` pra área logada; filtros de
-leilão por localização/modalidade; `/lotes/{id}/vizinhos`; expor `realtimeUrl`+`clientId` no `/site/config`.
+Ver PENDENCIAS. Destaques: filtros de leilão por localização/modalidade; expor `realtimeUrl`+`clientId`
+no `/site/config` (parcial — falta preencher a URL do gateway por tenant). No lado da POC (não da API):
+plugar a renovação automática do access token via `/api/auth/refresh` no `/api/proxy` (retry em 401) —
+o endpoint e a rota BFF já existem, falta só o disparo automático.
 
 ## 15. Como usar como base para um site real
 

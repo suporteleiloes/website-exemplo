@@ -15,6 +15,8 @@ export default function Footer({ config }: { config: SiteConfig | null }) {
           <ul className="mt-2 space-y-1">
             <li><Link href="/" className="hover:text-marca">Início</Link></li>
             <li><Link href="/leiloes" className="hover:text-marca">Leilões</Link></li>
+            <li><Link href="/quero-vender" className="hover:text-marca">Quero vender</Link></li>
+            <li><Link href="/contato" className="hover:text-marca">Contato</Link></li>
             <li><Link href="/conta" className="hover:text-marca">Minha conta</Link></li>
           </ul>
         </div>

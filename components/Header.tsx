@@ -27,6 +27,7 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
           <Link href="/leiloes" className="hover:text-marca">Leilões</Link>
           <Link href="/venda-direta" className="hover:text-marca">Venda Direta</Link>
           <Link href="/mapa" className="hidden hover:text-marca md:inline">Mapa</Link>
+          <Link href="/quero-vender" className="hidden hover:text-marca md:inline">Quero vender</Link>
           <Link href="/contato" className="hidden hover:text-marca md:inline">Contato</Link>
           {headerMenu.slice(0, 2).map((it) => (
             <a key={it.id} href={it.url || '#'} className="hidden hover:text-marca lg:inline">{it.titulo}</a>

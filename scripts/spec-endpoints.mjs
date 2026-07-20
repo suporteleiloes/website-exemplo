@@ -93,6 +93,14 @@ async function run() {
   r = await jpost('/newsletter', { email: 'invalido' });
   check('POST /newsletter (email inválido 400)', r.status === 400);
 
+  // Quero vender (lead de comitente → CRM + Negocio)
+  r = await jpost('/quero-vender', { nome: 'Spec', email: 'spec@example.com', telefone: '11999990000' }); // falta descricao → 400
+  check('POST /quero-vender (validação 400)', r.status === 400 && r.body?.code === 'validation' && r.body?.extra?.field === 'descricao', `field=${r.body?.extra?.field}`);
+  r = await jpost('/quero-vender', { nome: 'Spec', email: 'invalido', telefone: '11999990000', descricao: 'teste' });
+  check('POST /quero-vender (email inválido 400)', r.status === 400 && r.body?.extra?.field === 'email');
+  r = await jpost('/quero-vender', { nome: 'Bot', email: 'bot@example.com', telefone: '11999990000', descricao: 'x', honeypot: 'spam' });
+  check('POST /quero-vender (honeypot 200 sem id)', r.status === 200 && r.body?.ok === true && !r.body?.id);
+
   // Venda Direta (WebsiteV2_VendaDireta) — vocabulário próprio, sem termos de leilão
   const PROIBIDO = /lei[lã]|lote|lance|arrematant/i;
   r = await jget('/venda-direta/eventos?limit=3');

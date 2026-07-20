@@ -105,6 +105,30 @@ export interface SetorItem { id: number; nome: string }
 export interface ContatoSetores { assuntos: SetorItem[]; departamentos: SetorItem[] }
 export const getContatoSetores = () => apiGet<ContatoSetores>('/contato/setores', { revalidate: 120 });
 
+// ── Quero vender (lead de comitente) ─────────────────────────────
+// POST público. Vira WebsiteLead no CRM + Negocio no funil de leads.
+// Anti-dup por email/telefone nas últimas 6h: reenvio devolve o id existente (sucesso, não erro).
+// Honeypot preenchido → 200 sem `id` (a API não revela o bloqueio).
+export interface QueroVenderPayload {
+  nome: string;
+  email: string;
+  telefone: string;
+  descricao: string;
+  tipoBem?: string;
+  cidade?: string;
+  uf?: string;
+  valorEstimado?: string | number;
+  quantidade?: string | number;
+  origem?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  honeypot?: string;
+}
+export interface QueroVenderResposta { ok: true; id?: number; message: string }
+export const postQueroVender = (payload: QueroVenderPayload) =>
+  apiPost<QueroVenderResposta>('/quero-vender', payload);
+
 // ── Mapa de bens georreferenciado ────────────────────────────────
 export interface MapaPin {
   loteId: number; loteSlug: string | null; numero: number | string | null; titulo: string | null;
