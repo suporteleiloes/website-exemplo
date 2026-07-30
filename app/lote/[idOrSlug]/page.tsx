@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Galeria from '@/components/Galeria';
 import LanceBox from '@/components/LanceBox';
+import BotaoAuditorio from '@/components/BotaoAuditorio';
 import LoteCard from '@/components/LoteCard';
 import { BadgeLote } from '@/components/Badge';
 import { getLote, getLotes, getLoteVizinhos, getSiteConfig, ApiException } from '@/lib/api';
@@ -89,6 +90,11 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
               clientId={realtime.clientId ?? undefined}
               realtimeUrl={realtime.url ?? undefined}
             />
+          </div>
+
+          {/* Auditório virtual — CTA sutil abaixo do painel de lance (convenção de layout). */}
+          <div className="mt-3">
+            <BotaoAuditorio leilaoId={leilaoId} status={leilao?.status} aoVivo={leilao?.status === 4} variant="sutil" className="w-full" />
           </div>
 
           {/* Especificações */}

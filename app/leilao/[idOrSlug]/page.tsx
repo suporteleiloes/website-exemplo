@@ -4,6 +4,7 @@ import FiltrosLotes from '@/components/FiltrosLotes';
 import LoteCard from '@/components/LoteCard';
 import Paginacao from '@/components/Paginacao';
 import HabilitacaoBtn from '@/components/HabilitacaoBtn';
+import BotaoAuditorio from '@/components/BotaoAuditorio';
 import { BadgeLeilao } from '@/components/Badge';
 import { Vazio } from '@/components/Estados';
 import { getLeilao, getLotes, getFiltros } from '@/lib/api';
@@ -94,7 +95,7 @@ export default async function LeilaoPage(
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           {leilao._urls?.edital && <a href={leilao._urls.edital} target="_blank" className="btn-outline">📄 Edital</a>}
-          {leilao._urls?.auditorio && <a href={leilao._urls.auditorio} target="_blank" className="btn-outline">▶ Auditório ao vivo</a>}
+          <BotaoAuditorio leilaoId={leilao.id} status={leilao.status} aoVivo={leilao.status === 4} />
         </div>
 
         {/* Habilitação */}
