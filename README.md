@@ -319,10 +319,11 @@ da plataforma, a outra é requisito legal — e é justamente o que um site novo
 `components/SeloSL.tsx`, já montado no `Footer`. Arte em
 `https://static.suporteleiloes.com.br/selo.png` (198×69), link para
 `https://www.suporteleiloes.com.br` em nova aba com `rel="noopener noreferrer"`,
-`width`/`height` explícitos (sem layout shift) e `alt` descritivo.
+`width`/`height` com as dimensões intrínsecas da arte (sem layout shift) e `alt` descritivo.
 
-Fica na **última coluna do rodapé, abaixo dos dados do leiloeiro**, discreto (~160px). Ajuste o
-tamanho pelo prop (`<SeloSL largura={140} />`) e a posição pelo `className` — mas **não remova** e
+Fica na **última coluna do rodapé, abaixo dos dados do leiloeiro**, discreto (**96px** de largura;
+a altura sai da proporção). Ajuste o tamanho pelo prop (`<SeloSL largura={120} />`) e a posição pelo
+`className` — mas **não remova** e
 não copie a imagem para o repositório do cliente (a arte é atualizada num lugar só).
 
 ### 16.2 LGPD — banner de consentimento

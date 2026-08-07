@@ -8,8 +8,10 @@
  * o site que copia este template só usa `<SeloSL />` e nunca mais pensa nisso.
  *
  * ── Regras (não regredir) ────────────────────────────────────────────────────
- * - `width`/`height` explícitos e proporcionais à arte original (198×69), para
- *   o navegador reservar o espaço antes do download — sem layout shift (CLS).
+ * - `width`/`height` do `<img>` são as dimensões INTRÍNSECAS da arte (198×69) e
+ *   não acompanham o tamanho exibido: é delas que o navegador tira a proporção
+ *   para reservar a caixa antes do download — sem layout shift (CLS). O tamanho
+ *   que aparece na tela é só CSS (`largura` + altura automática).
  * - `<img>` puro, não `next/image`: é a convenção deste template (imagens da API
  *   e assets externos entram como `<img>`; ver `lib/img.ts`).
  * - `rel="noopener noreferrer"` no link em nova aba (o destino não ganha acesso
@@ -22,18 +24,17 @@ export const SELO_URL = 'https://static.suporteleiloes.com.br/selo.png';
 /** Destino do selo. */
 export const SELO_LINK = 'https://www.suporteleiloes.com.br';
 
-/** Proporção da arte original (198 × 69) — mantém o cálculo de altura honesto. */
-const PROPORCAO = 69 / 198;
+/** Dimensões intrínsecas da arte — vão nos atributos `width`/`height` do `<img>`. */
+const ARTE = { largura: 198, altura: 69 } as const;
 
 interface Props {
-  /** Largura em px. Default 160 (tamanho de rodapé; discreto e legível). */
+  /** Largura exibida, em px. Default 96 (rodapé; discreto e legível). */
   largura?: number;
   /** Classes extras do wrapper (alinhamento/espaçamento no rodapé do site). */
   className?: string;
 }
 
-export default function SeloSL({ largura = 160, className = '' }: Props) {
-  const altura = Math.round(largura * PROPORCAO);
+export default function SeloSL({ largura = 96, className = '' }: Props) {
   return (
     <a
       href={SELO_LINK}
@@ -46,11 +47,11 @@ export default function SeloSL({ largura = 160, className = '' }: Props) {
       <img
         src={SELO_URL}
         alt="Site seguro, com SSL e monitoramento 24h — desenvolvido por Suporte Leilões"
-        width={largura}
-        height={altura}
+        width={ARTE.largura}
+        height={ARTE.altura}
         loading="lazy"
         decoding="async"
-        style={{ width: largura, height: altura }}
+        style={{ width: largura, height: 'auto' }}
       />
     </a>
   );
