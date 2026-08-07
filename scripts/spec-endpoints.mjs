@@ -60,6 +60,10 @@ async function run() {
     const r2 = await jget(`/leiloes/${leilao.slug || leilao.id}`);
     check('GET /leiloes/{idOrSlug}', r2.status === 200 && r2.body?.id, `id=${r2.body?.id}`);
     check('  leilão tem campos essenciais', !!(leilao.titulo !== undefined && leilao.statusLabel && '_urls' in (r2.body || {})));
+    // Leilão de parceria (README §5.1, regra 3): os dois campos vêm no nível PUBLIC,
+    // normalmente `null`. O que importa é EXISTIREM — se sumirem, o site volta a
+    // abrir internamente leilão que é operado por outra plataforma.
+    check('  leilão expõe urlExterna/urlExternaEmpresa', 'urlExterna' in leilao && 'urlExternaEmpresa' in leilao, `urlExterna=${leilao.urlExterna ?? 'null'}`);
   } else check('GET /leiloes/{idOrSlug}', false, 'sem leilões pra testar');
 
   // Lotes
@@ -73,8 +77,30 @@ async function run() {
     check('GET /lotes/{id}/lances-publicos', r4.status === 200 && 'result' in (r4.body || {}));
   } else check('GET /lotes/{idOrSlug}', false, 'sem lotes pra testar');
 
+  // O leilão ANINHADO no lote precisa bastar pro card (duas praças, natureza,
+  // nº de lotes) — sem isso volta a exigir um GET /leiloes/{id} por card.
+  if (lote?.leilao) {
+    // `urlExterna` no leilão ANINHADO é o que permite ao card do LOTE saber que o
+    // pregão é de um site parceiro e abrir o aviso de redirecionamento em vez da
+    // página interna (README §5.1, regra 3). Sem ele, o card mentiria pro visitante.
+    const faltando = ['statusLabel', 'data1', 'data2', 'judicial', 'vendaDireta', 'totalLotes', 'urlExterna'].filter((k) => !(k in lote.leilao));
+    check('  lote.leilao traz datas/natureza/totalLotes/urlExterna', faltando.length === 0, faltando.length ? `faltando: ${faltando.join(', ')}` : 'ok');
+  }
+
+  // leilaoStatus particiona por status do LEILÃO-PAI (abas abertos × encerrados).
+  {
+    const [ab, en, tudo] = await Promise.all([
+      jget('/lotes?leilaoStatus=1,2,3,4,98&limit=1'),
+      jget('/lotes?leilaoStatus=96,97,99&limit=1'),
+      jget('/lotes?limit=1'),
+    ]);
+    check('GET /lotes?leilaoStatus (abertos × encerrados)',
+      ab.status === 200 && en.status === 200 && (ab.body.total + en.body.total) <= tudo.body.total,
+      `abertos=${ab.body?.total} encerrados=${en.body?.total} total=${tudo.body?.total}`);
+  }
+
   // Filtros de lote (HTTP 200)
-  for (const q of ['ano_min=2010&ano_max=2025', 'km_max=200000', 'marca=ford', 'area_edificada_min=10', 'bbox=-34,-74,5,-34', 'lat=-23.5&lng=-46.6&raio=50', 'uf=PR', 'categoria=1']) {
+  for (const q of ['ano_min=2010&ano_max=2025', 'km_max=200000', 'marca=ford', 'area_edificada_min=10', 'bbox=-34,-74,5,-34', 'lat=-23.5&lng=-46.6&raio=50', 'uf=PR', 'categoria=1', 'judicial=true', 'processo=0000000-00.0000.0.00.0000', 'sortBy=dataLeilao&order=asc', 'sortBy=maiorDesconto']) {
     const rr = await jget(`/lotes?${q}&limit=1`);
     check(`GET /lotes?${q}`, rr.status === 200, `total=${rr.body?.total}`);
   }

@@ -13,8 +13,12 @@ export const TENANT_HEADER = 'Uloc-Mi';
 
 // URL do PAINEL do arrematante = aplicativo-cliente NOVO (`app.<dominio>`).
 // ⚠️ NUNCA o arrematante LEGADO (`arrematante.<dominio>`) — sites novos não podem
-// nem saber que ele existe. O auditório é `${PAINEL_URL}/auditorio/{leilaoId}`
+// nem saber que ele existe. O auditório é `/auditorio/{leilaoId}` no painel
 // (NÃO usar `leilao._urls.auditorio` da API, que aponta pro legado hash-routing).
+// ⛔ NUNCA monte um link com esta constante (`${PAINEL_URL}/rota`): o painel está em
+// OUTRO domínio e a sessão não atravessa — todo link vai por `hrefPainel()`
+// (`lib/painel.ts`), que passa pelo handoff SSO. Use PAINEL_URL só pra checar se há
+// painel configurado. Ver README §8.1.
 export const PAINEL_URL = (process.env.NEXT_PUBLIC_PAINEL_URL || '').replace(/\/$/, '');
 
 // Slug do widget de atendimento (crm_widget_config) usado no chat do site.

@@ -27,12 +27,43 @@ do arrematante (`/conta`, login, lance, habilitação via `/me/*`), **popup** pr
 **contato** (`/contato`), **cadastro completo** de arrematante (`/cadastro` + BFF
 `app/api/auth/cadastro`).
 
+## ⛔ Três regras do catálogo (não regredir) — detalhe no `README.md §5.1`
+
+1. **URL de leilão/lote SEMPRE com ID** (`/leilao/352-slug`, `/lote/12345-slug`): o slug é
+   derivado do título, muda quando o leiloeiro edita o título no ERP e quebraria todo link já
+   divulgado. Gerar só via `lib/rota.ts` (`hrefLeilao`/`hrefLote`) e resolver a rota dinâmica
+   com `resolverPorIdOuSlug` (aceita `{id}-{slug}`, `{id}` e `{slug}` puro — compatibilidade).
+2. **O status manda, a data não**: "encerrado" é SÓ `status === 99`. Jamais derivar de data
+   vencida — leilão aberto com data prevista no passado segue ABERTO; onde haveria contador
+   com data vencida, mostrar a data prevista. Helpers em `lib/format.ts`.
+3. **Leilão de parceria** (`leilao.urlExterna`, PUBLIC): card de leilão e de lote não abrem a
+   página interna — modal de aviso e, ao confirmar, navegação pra URL externa na mesma aba.
+   Nas páginas de detalhe, faixa de aviso + habilitação/auditório/lance escondidos.
+   `lib/externo.ts` + `components/RedirecionamentoExterno.tsx`.
+
+## ⛔ Sessão única site ↔ painel — nenhum link pro painel escrito à mão
+
+O painel do arrematante (app-cliente) vive em **outro domínio** (`app.<tenant>`) e cookie não atravessa
+domínio: linkar `${PAINEL_URL}/rota` direto no JSX faz o visitante **logado no site** chegar **deslogado**
+no painel (era o caso do botão "Auditório Virtual"). A ponte é o **handoff SSO**
+(`app/api/sso/handoff/route.ts` → `/api/sso/exchange` na API → `/api/auth/sso/redeem` no painel).
+
+Duas camadas, ambas obrigatórias: **no login/cadastro** o navegador passa pelo handoff com `?voltar=` (já
+deixa o painel logado) e **em todo link** o destino passa por **`hrefPainel()`** (`lib/painel.ts`) — porque
+a sessão do painel expira em momento diferente da do site e sem essa camada o problema volta sozinho.
+`hrefPainel(rota, { publico: true })` → `?anon=1` para destinos públicos do painel (auditório).
+`?voltar=` só aceita URL do mesmo domínio-raiz (anti open-redirect) — não relaxar.
+
+**Detalhe completo, com os porquês e os cuidados de portabilidade: `README.md §8.1`.**
+
 ## Arquitetura (resumo)
 
 - **BFF auth**: JWT/refresh em cookies httpOnly (`app/api/auth/*`), proxy autenticado
   (`app/api/proxy/[...path]`) anexa Bearer + header `Uloc-Mi`. O browser nunca vê o token.
 - **lib/**: `config` (env), `api` (fetch V2 tipado), `vd` (venda direta), `auth`, `realtime`,
-  `format`, `img`, `cookies`. Tipos reais em `lib/types.ts`.
+  `format`, `img`, `cookies`, `rota` (URL canônica), `externo` (leilão de parceria),
+  `painel` (links pro painel do arrematante — SEMPRE via handoff SSO).
+  Tipos reais em `lib/types.ts`.
 - **Spec = contrato vivo**: `npm run spec` (`scripts/spec-endpoints.mjs`) — rodar a cada mudança.
 
 ## Como rodar

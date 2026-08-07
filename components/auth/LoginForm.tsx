@@ -1,7 +1,19 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { PAINEL_URL } from '@/lib/config';
 
+/**
+ * ── SESSÃO ÚNICA SITE + PAINEL (2026-08-07) ─────────────────────────────────
+ * Logar no site tem de logar TAMBÉM no painel do arrematante (app-cliente, outro
+ * domínio). Como cookie não atravessa domínio, mandamos o navegador pelo handoff
+ * SSO com `?voltar=<url do site>`: o painel resgata o código de uso único, grava
+ * a sessão dele e devolve o visitante exatamente pra onde ele ia. Sem isso, o
+ * arrematante logado no site chegava DESLOGADO no auditório.
+ * É navegação de página inteira (window.location), não `router.push` — o destino
+ * é outro domínio. Se o handoff falhar, o BFF devolve pro site do mesmo jeito, e
+ * os links continuam cobertos pelo handoff em cada clique (ver lib/painel.ts).
+ */
 export default function LoginForm() {
   const router = useRouter();
   const [user, setUser] = useState('');
@@ -19,6 +31,11 @@ export default function LoginForm() {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErro(d?.message || 'Não foi possível entrar.'); return; }
+      if (PAINEL_URL) {
+        // Passa pelo painel pra propagar a sessão e volta pro destino no site.
+        window.location.href = `/api/sso/handoff?redirect=/&voltar=${encodeURIComponent('/conta')}`;
+        return;
+      }
       router.push('/conta');
       router.refresh();
     } catch { setErro('Erro de rede.'); }

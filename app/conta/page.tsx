@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import LogoutButton from '@/components/auth/LogoutButton';
 import { getSessionUser, authFetch } from '@/lib/auth';
+import { PAINEL_URL } from '@/lib/config';
+import { hrefPainel } from '@/lib/painel';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +81,21 @@ export default async function ContaPage() {
         <Card titulo="Meus lances" r={lances} />
         <Card titulo="Meus leilões / habilitações" r={leiloes} />
       </div>
+
+      {/* Atalhos pro painel do arrematante (app-cliente, outro domínio). TODOS via
+          hrefPainel → handoff SSO: é o que faz o visitante chegar lá JÁ logado.
+          Nunca escreva `${PAINEL_URL}/rota` aqui. Ver lib/painel.ts + README. */}
+      {PAINEL_URL && (
+        <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4">
+          <p className="font-semibold text-gray-800">Painel do arrematante</p>
+          <p className="mt-1 text-sm text-gray-500">Lances, habilitações e documentos ficam no painel — você entra sem digitar a senha de novo.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href={hrefPainel('/')} className="btn-primary">Ir para o painel</a>
+            <a href={hrefPainel('/meus-lances')} className="btn-outline">Meus lances</a>
+            <a href={hrefPainel('/favoritos')} className="btn-outline">Favoritos</a>
+          </div>
+        </div>
+      )}
 
       <p className="mt-6 text-xs text-gray-400">
         As seções acima consomem o namespace consolidado da área logada (Website V2):

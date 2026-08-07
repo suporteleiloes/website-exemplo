@@ -52,3 +52,31 @@ export function corStatusLote(status: number): string {
 
 // Leilão aceita lance? (status 3=aberto ou 4=em leilão)
 export const leilaoPermiteLance = (status: number) => status === 3 || status === 4;
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * ⛔ REGRA FIRME (2026-08-07) — O STATUS MANDA, A DATA NÃO.
+ *
+ * O site NUNCA deriva "encerrado" de uma data no passado. Se o leilão está com
+ * status ABERTO (3) ou AO VIVO (4) no ERP e a data prevista já passou, ele
+ * continua ABERTO no site — data desatualizada é problema de agenda do
+ * leiloeiro, não do site. Aconteceu de verdade: leilão em andamento estourou a
+ * data prevista e o card exibiu "ENCERRADO" pro visitante, que desistiu.
+ *
+ * O único sinal de encerramento é `status === 99` (e os demais rótulos vêm de
+ * `statusLabel`, direto da API). A data serve apenas pra FORMATAR texto
+ * (contador, "Encerra em", "Data prevista") — nunca pra decidir estado.
+ * Ao copiar este site, mantenha essa separação.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Encerrado é SÓ status 99 (nenhuma comparação de data aqui — de propósito). */
+export const leilaoEncerrado = (status: number) => status === 99;
+
+/**
+ * A data já passou? Serve exclusivamente pra UI escolher entre contagem
+ * regressiva/"próximo pregão" e data absoluta — NÃO muda o estado do leilão.
+ */
+export function dataNoPassado(iso: string | null | undefined): boolean {
+  if (!iso) return false;
+  const ms = new Date(iso).getTime();
+  return !isNaN(ms) && ms - Date.now() <= 0;
+}

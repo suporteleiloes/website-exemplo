@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import FiltrosLotes from '@/components/FiltrosLotes';
 import LoteCard from '@/components/LoteCard';
@@ -6,11 +5,14 @@ import Paginacao from '@/components/Paginacao';
 import HabilitacaoBtn from '@/components/HabilitacaoBtn';
 import BotaoAuditorio from '@/components/BotaoAuditorio';
 import { BadgeLeilao } from '@/components/Badge';
+import { AvisoLeilaoParceria } from '@/components/RedirecionamentoExterno';
 import { Vazio } from '@/components/Estados';
 import { getLeilao, getLotes, getFiltros } from '@/lib/api';
 import { ApiException } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
-import { dataHora, TIPO_LEILAO, leilaoPermiteLance } from '@/lib/format';
+import { dataHora, dataNoPassado, leilaoEncerrado, TIPO_LEILAO } from '@/lib/format';
+import { urlExternaValida } from '@/lib/externo';
+import { hrefLeilao, resolverPorIdOuSlug } from '@/lib/rota';
 import type { Filtros, Leilao, Lote } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -22,9 +24,19 @@ export default async function LeilaoPage(
 ) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  let leilao: Leilao;
-  try { leilao = await getLeilao(params.idOrSlug); }
-  catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }
+
+  // A rota canônica é `/leilao/{id}-{slug}`, mas `{id}` puro e `{slug}` puro
+  // (links antigos, já divulgados) continuam abrindo — `resolverPorIdOuSlug`
+  // tenta o ID primeiro e cai no valor cru. Ver `lib/rota.ts`.
+  // O 404 vira `null` DENTRO do resolvedor pra ele poder tentar a próxima forma;
+  // erro de infra continua subindo pro error.tsx.
+  const leilao: Leilao | null = await resolverPorIdOuSlug<Leilao>(params.idOrSlug, (chave) =>
+    getLeilao(chave).catch((e) => {
+      if (e instanceof ApiException && e.status === 404) return null;
+      throw e;
+    }),
+  );
+  if (!leilao) notFound();
 
   const loteParams: Record<string, string | number | undefined> = {
     leilao: leilao.id, limit: 12, page: searchParams.page ? Number(searchParams.page) : 1,
@@ -42,18 +54,33 @@ export default async function LeilaoPage(
   ]);
   const lista: Lote[] = lotes.result;
 
+  // Paginação sempre na URL CANÔNICA (`{id}-{slug}`), não no que o visitante
+  // digitou: quem entrou por um link antigo só-slug é normalizado ao paginar.
+  const base = hrefLeilao(leilao);
   const makeHref = (pg: number) => {
     const q = new URLSearchParams();
     Object.entries(searchParams).forEach(([k, v]) => { if (v) q.set(k, String(v)); });
     q.set('page', String(pg));
-    return `/leilao/${params.idOrSlug}?${q.toString()}`;
+    return `${base}?${q.toString()}`;
   };
 
   const tipo = leilao.tipo ? TIPO_LEILAO[leilao.tipo] : leilao.tipoLabel;
   const datas = [leilao.data1, leilao.data2, leilao.data3].filter(Boolean) as string[];
 
+  // LEILÃO DE PARCERIA: quem chegou por link direto/SEO não passou pelo card,
+  // então o aviso de redirecionamento tem que aparecer aqui também.
+  const externa = urlExternaValida(leilao.urlExterna);
+  // "Encerrado" vem SÓ do status 99 — data vencida NÃO encerra leilão aberto
+  // (regra em `lib/format.ts`). Aqui ela só muda o texto ao lado da data.
+  const encerrado = leilaoEncerrado(leilao.status);
+
   return (
     <div className="container-page">
+      {/* Leilão de parceria: o pregão é de outro site (ver RedirecionamentoExterno). */}
+      {externa && (
+        <AvisoLeilaoParceria url={externa} plataforma={leilao.urlExternaEmpresa} className="mb-4" />
+      )}
+
       {/* Cabeçalho */}
       <div className="rounded-lg border border-gray-200 bg-white p-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -68,7 +95,14 @@ export default async function LeilaoPage(
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <p className="text-xs font-semibold uppercase text-gray-400">Datas dos pregões</p>
-            {datas.length ? datas.map((d, i) => <p key={i} className="text-sm text-gray-700">{i + 1}ª praça: {dataHora(d)}</p>) : <p className="text-sm text-gray-500">—</p>}
+            {datas.length ? datas.map((d, i) => (
+              <p key={i} className="text-sm text-gray-700">
+                {i + 1}ª praça: {dataHora(d)}
+                {/* Data vencida com o leilão AINDA ABERTO no ERP: sinalizamos que é
+                    previsão, mas NÃO dizemos que encerrou — o status é quem manda. */}
+                {!encerrado && dataNoPassado(d) && <span className="text-xs text-gray-500"> (prevista)</span>}
+              </p>
+            )) : <p className="text-sm text-gray-500">—</p>}
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-gray-400">Local / modalidade</p>
@@ -95,14 +129,18 @@ export default async function LeilaoPage(
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           {leilao._urls?.edital && <a href={leilao._urls.edital} target="_blank" className="btn-outline">📄 Edital</a>}
-          <BotaoAuditorio leilaoId={leilao.id} status={leilao.status} aoVivo={leilao.status === 4} />
+          {/* Auditório é do site que CONDUZ o pregão — no leilão de parceria, não é o nosso. */}
+          {!externa && <BotaoAuditorio leilaoId={leilao.id} status={leilao.status} aoVivo={leilao.status === 4} />}
         </div>
 
-        {/* Habilitação */}
-        <div className="mt-5 max-w-md rounded-lg bg-gray-50 p-4">
-          <p className="mb-2 text-sm font-semibold text-gray-700">Participar deste leilão</p>
-          <HabilitacaoBtn leilaoId={leilao.id} logado={!!user} />
-        </div>
+        {/* Habilitação — some no leilão de PARCERIA: o cadastro e a habilitação
+            acontecem no site de destino, habilitar aqui não serviria pra nada. */}
+        {!externa && (
+          <div className="mt-5 max-w-md rounded-lg bg-gray-50 p-4">
+            <p className="mb-2 text-sm font-semibold text-gray-700">Participar deste leilão</p>
+            <HabilitacaoBtn leilaoId={leilao.id} logado={!!user} />
+          </div>
+        )}
       </div>
 
       {/* Lotes */}

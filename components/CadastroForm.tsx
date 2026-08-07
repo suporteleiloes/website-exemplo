@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { PAINEL_URL } from '@/lib/config';
 
 interface VersaoCadastro { versao?: number; permitirEstrangeiros?: boolean; bloquearCadPj?: boolean }
 
@@ -72,6 +73,12 @@ export default function CadastroForm({ versao }: { versao: VersaoCadastro | null
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErro(primeiraMsg(d?.message) || 'Não foi possível concluir o cadastro.'); return; }
+      if (PAINEL_URL) {
+        // O cadastro já devolve JWT (loga). Passa pelo handoff pra propagar a sessão
+        // ao painel (outro domínio) e volta pro site — mesma lógica do LoginForm.
+        window.location.href = `/api/sso/handoff?redirect=/&voltar=${encodeURIComponent('/conta')}`;
+        return;
+      }
       router.push('/conta');
       router.refresh();
     } catch {

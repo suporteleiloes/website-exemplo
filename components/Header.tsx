@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import BuscaRapida from './BuscaRapida';
+import { PAINEL_URL } from '@/lib/config';
+import { hrefPainel } from '@/lib/painel';
 import type { SiteConfig, MenuGrupo, SessionUser } from '@/lib/types';
 
 export default function Header({ config, menus, user }: { config: SiteConfig | null; menus: MenuGrupo[]; user: SessionUser | null }) {
@@ -33,7 +35,14 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
             <a key={it.id} href={it.url || '#'} className="hidden hover:text-marca lg:inline">{it.titulo}</a>
           ))}
           {user ? (
-            <Link href="/conta" className="btn-outline">Olá, {(user.name || 'Conta').split(' ')[0]}</Link>
+            <>
+              {PAINEL_URL && (
+                // Link do painel SEMPRE por hrefPainel (lib/painel.ts) — nunca a URL crua:
+                // é o que garante que o visitante chegue LOGADO no outro domínio.
+                <a href={hrefPainel('/')} className="hidden hover:text-marca sm:inline">Meu painel</a>
+              )}
+              <Link href="/conta" className="btn-outline">Olá, {(user.name || 'Conta').split(' ')[0]}</Link>
+            </>
           ) : (
             <>
               <Link href="/cadastro" className="hidden hover:text-marca sm:inline">Cadastre-se</Link>

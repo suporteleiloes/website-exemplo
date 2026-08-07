@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { MapaPin } from '@/lib/api';
 import type { FacetItem } from '@/lib/types';
+import { hrefLote } from '@/lib/rota';
 
 // Carrega Leaflet via CDN (1x) e resolve quando o global L está pronto.
 let leafletPromise: Promise<any> | null = null;
@@ -55,7 +56,9 @@ export default function MapaBens({ ufs, cidades }: Props) {
         const lng = parseFloat(String(p.longitude));
         if (!isFinite(lat) || !isFinite(lng)) continue;
         bounds.push([lat, lng]);
-        const href = `/lote/${p.loteSlug || p.loteId}`;
+        // URL canônica `{id}-{slug}` (o pin do mapa é link divulgável como
+        // qualquer outro — ver `lib/rota.ts`).
+        const href = hrefLote({ id: p.loteId, slug: p.loteSlug });
         const marker = L.marker([lat, lng]).addTo(layerRef.current);
         marker.bindPopup(
           `<div style="min-width:160px">

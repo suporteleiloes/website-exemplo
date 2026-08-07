@@ -1,4 +1,5 @@
 import { PAINEL_URL } from '@/lib/config';
+import { hrefPainel, rotaAuditorio } from '@/lib/painel';
 
 /**
  * Botão "Auditório Virtual" — CONVENÇÃO de todo site de leiloeiro (2026-07-30).
@@ -6,9 +7,15 @@ import { PAINEL_URL } from '@/lib/config';
  * Presente nas telas de LEILÃO e de LOTE, sempre visível, em VERMELHO (suave).
  * É o caminho pra acompanhar o pregão ao vivo no app do arrematante.
  *
- * URL = `${PAINEL_URL}/auditorio/{leilaoId}` — o app-cliente NOVO (`app.<dominio>`).
+ * Destino = `/auditorio/{leilaoId}` no app-cliente NOVO (`app.<dominio>`).
  * ⚠️ NUNCA use `leilao._urls.auditorio` da API: aponta pro arrematante LEGADO
  * (`arrematante.<dominio>`, hash-routing) — sites novos não referenciam o legado.
+ *
+ * ⚠️ SEMPRE VIA `hrefPainel()` → `/api/sso/handoff` (2026-08-07). Linkar direto o
+ * domínio do painel fazia o visitante LOGADO no site chegar ao auditório
+ * DESLOGADO — a sessão não atravessa domínio sozinha; quem faz a ponte é o
+ * handoff SSO (código de troca de uso único). `publico: true` (→ `anon=1`) mantém
+ * o auditório aberto pra quem não está logado. Ver `lib/painel.ts`.
  *
  * `variant`: `destaque` (sólido, p/ hero do leilão) | `sutil` (rosado, p/ dentro
  * do painel de lance, abaixo do "Dar lance"). Some se o leilão está encerrado/
@@ -39,7 +46,7 @@ export default function BotaoAuditorio({
 
   return (
     <a
-      href={`${PAINEL_URL}/auditorio/${leilaoId}`}
+      href={hrefPainel(rotaAuditorio(leilaoId), { publico: true })}
       target="_blank"
       rel="noopener noreferrer"
       className={className}

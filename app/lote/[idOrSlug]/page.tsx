@@ -5,22 +5,39 @@ import LanceBox from '@/components/LanceBox';
 import BotaoAuditorio from '@/components/BotaoAuditorio';
 import LoteCard from '@/components/LoteCard';
 import { BadgeLote } from '@/components/Badge';
+import { AvisoLeilaoParceria } from '@/components/RedirecionamentoExterno';
 import { getLote, getLotes, getLoteVizinhos, getSiteConfig, ApiException } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
 import { moeda } from '@/lib/format';
+import { urlExternaValida } from '@/lib/externo';
+import { hrefLeilao, hrefLote, resolverPorIdOuSlug } from '@/lib/rota';
 import type { Lote } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function LotePage(props: { params: Promise<{ idOrSlug: string }> }) {
   const params = await props.params;
-  let lote: Lote;
-  try { lote = await getLote(params.idOrSlug); }
-  catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }
+
+  // Aceita `{id}-{slug}` (canônico), `{id}` puro e `{slug}` puro — os links já
+  // divulgados continuam abrindo. Ver `lib/rota.ts`. O 404 vira `null` DENTRO do
+  // resolvedor pra ele poder tentar a próxima forma; erro de infra sobe pro
+  // error.tsx.
+  const lote: Lote | null = await resolverPorIdOuSlug<Lote>(params.idOrSlug, (chave) =>
+    getLote(chave).catch((e) => {
+      if (e instanceof ApiException && e.status === 404) return null;
+      throw e;
+    }),
+  );
+  if (!lote) notFound();
 
   const bem = lote.bem;
   const leilao: any = lote.leilao;
   const leilaoId = leilao?.id;
+
+  // LEILÃO DE PARCERIA: o pregão é de outra plataforma. A página abre (o lote é
+  // divulgado por nós), mas sem caixa de lance — quem dá lance é o site de
+  // destino. Ver `components/RedirecionamentoExterno.tsx`.
+  const externa = urlExternaValida(leilao?.urlExterna);
 
   const safe = async <T,>(p: Promise<T>, fb: T) => { try { return await p; } catch { return fb; } };
   const [vizinhos, relacionadosData, user, config] = await Promise.all([
@@ -37,7 +54,8 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
   // P6: realtime (url + clientId) vem do /site/config.
   const realtime = (config?.realtime ?? { url: null, clientId: null }) as { url: string | null; clientId: string | null };
 
-  const podeLance = lote.status === 1 || lote.status === 2; // aberto / em pregão
+  // aberto / em pregão — e nunca em leilão de parceria (o lance é lá fora).
+  const podeLance = (lote.status === 1 || lote.status === 2) && !externa;
   const titulo = bem?.siteTitulo || lote.descricao || `Lote ${lote.numeroString || lote.numero}`;
   const loc = bem?.localizacao;
 
@@ -53,16 +71,26 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
 
   return (
     <div className="container-page">
-      {/* Breadcrumb + prev/next */}
+      {/* Breadcrumb + prev/next — todos os links na forma canônica `{id}-{slug}`. */}
       <div className="mb-3 flex items-center justify-between text-sm">
         <div className="text-gray-500">
-          {leilao?.slug && <Link href={`/leilao/${leilao.slug || leilaoId}`} className="hover:text-marca">← {leilao.titulo || 'Voltar ao leilão'}</Link>}
+          {leilaoId && (
+            <Link href={hrefLeilao({ id: leilaoId, slug: leilao?.slug })} className="hover:text-marca">
+              ← {leilao?.titulo || 'Voltar ao leilão'}
+            </Link>
+          )}
         </div>
         <div className="flex gap-2">
-          {anterior && <Link href={`/lote/${anterior.slug || anterior.id}`} className="btn-outline">‹ Anterior</Link>}
-          {proximo && <Link href={`/lote/${proximo.slug || proximo.id}`} className="btn-outline">Próximo ›</Link>}
+          {anterior && <Link href={hrefLote(anterior)} className="btn-outline">‹ Anterior</Link>}
+          {proximo && <Link href={hrefLote(proximo)} className="btn-outline">Próximo ›</Link>}
         </div>
       </div>
+
+      {/* Leilão de parceria: aviso antes de qualquer coisa — o visitante precisa
+          saber que o lance deste lote não acontece aqui. */}
+      {externa && (
+        <AvisoLeilaoParceria url={externa} plataforma={leilao?.urlExternaEmpresa} className="mb-4" />
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
@@ -92,10 +120,14 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
             />
           </div>
 
-          {/* Auditório virtual — CTA sutil abaixo do painel de lance (convenção de layout). */}
-          <div className="mt-3">
-            <BotaoAuditorio leilaoId={leilaoId} status={leilao?.status} aoVivo={leilao?.status === 4} variant="sutil" className="w-full" />
-          </div>
+          {/* Auditório virtual — CTA sutil abaixo do painel de lance (convenção de
+              layout). Não aparece no leilão de parceria: o auditório é do site que
+              conduz o pregão, não o nosso. */}
+          {!externa && (
+            <div className="mt-3">
+              <BotaoAuditorio leilaoId={leilaoId} status={leilao?.status} aoVivo={leilao?.status === 4} variant="sutil" className="w-full" />
+            </div>
+          )}
 
           {/* Especificações */}
           <div className="mt-4 grid grid-cols-2 gap-2">

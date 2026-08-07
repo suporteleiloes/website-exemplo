@@ -73,9 +73,12 @@ exemplo-site/
 │   ├── api/auth/login        # BFF: autentica e seta cookies httpOnly (access + refresh)
 │   ├── api/auth/refresh      # BFF: troca o refresh token por um novo par (rotação de uso único)
 │   ├── api/auth/logout       # BFF: revoga sessão + limpa cookies
+│   ├── api/sso/handoff       # BFF: ponte de sessão site → painel do arrematante — ver §8.1
 │   └── api/proxy/[...path]   # BFF: proxy autenticado (anexa JWT do cookie)
 ├── components/               # UI (cards, filtros, galeria, banner, popup, lance, habilitação, auth)
-├── lib/                      # config, types, api (fetch V2), auth (sessão), realtime (WS), format, img
+├── lib/                      # config, types, api (fetch V2), auth (sessão), realtime (WS), format, img,
+│                             # rota (URL canônica {id}-{slug}), externo (leilão de parceria) — ver §5.1,
+│                             # painel (links pro painel do arrematante, SEMPRE via SSO) — ver §8.1
 ├── scripts/spec-endpoints.mjs# spec dos endpoints (npm run spec)
 ├── README.md                 # este arquivo
 └── PENDENCIAS-API.md         # lacunas/melhorias encontradas na API
@@ -87,18 +90,59 @@ exemplo-site/
 |---|---|---|
 | `/` | Banners, popup, categorias, leilões em andamento/próximos, lotes em destaque, chamadas institucionais | `/site/banners`, `/buscador/filtros`, `/leiloes`, `/lotes` |
 | `/leiloes` | Lista filtrável (situação, natureza, ano, busca, ordenação) + paginação | `/leiloes` |
-| `/leilao/[idOrSlug]` | Dados completos, datas, local, modalidade, edital, comitente, visitação/pagamento/retirada, **habilitação**, lotes filtráveis | `/leiloes/{id}`, `/lotes?leilao=`, `/buscador/filtros` |
-| `/lote/[idOrSlug]` | Galeria, specs, dados do veículo, **lance + histórico + tempo real**, anterior/próximo, relacionados | `/lotes/{id}`, `/lotes/{id}/lances-publicos`, `/lotes?leilao=` |
+| `/leilao/[idOrSlug]` — canônica `{id}-{slug}` (§5.1) | Dados completos, datas, local, modalidade, edital, comitente, visitação/pagamento/retirada, **habilitação**, lotes filtráveis | `/leiloes/{id}`, `/lotes?leilao=`, `/buscador/filtros` |
+| `/lote/[idOrSlug]` — canônica `{id}-{slug}` (§5.1) | Galeria, specs, dados do veículo, **lance + histórico + tempo real**, anterior/próximo, relacionados | `/lotes/{id}`, `/lotes/{id}/lances-publicos`, `/lotes?leilao=` |
 | `/login` | Login do arrematante | `/api/auth` (via BFF) |
 | `/conta` | Meus dados, favoritos, lances, leilões habilitados | endpoints autenticados (via proxy) |
 | `/quero-vender` | Formulário de quem quer vender bens (vira lead no CRM + Negócio no funil) | `/quero-vender`, `/site/config` |
+
+### 5.1 ⛔ Três regras do catálogo (obrigatórias em qualquer site sobre a Website V2)
+
+Não são preferências de estilo — cada uma nasceu de um problema real em produção.
+Ao copiar este projeto, copie as três.
+
+**1) URL de leilão/lote SEMPRE com ID: `{id}-{slug}`** — `lib/rota.ts`.
+
+O slug é derivado do título e **muda** quando o leiloeiro edita o título no ERP; com URL
+só-slug, todo link já divulgado (e-mail, WhatsApp, portal parceiro, anúncio pago, Google)
+vira 404. Por isso o ID — imutável — é o prefixo, e o slug fica só como enfeite legível/SEO:
+
+```
+/leilao/352-leilao-de-simulacao      /lote/12345-fiat-uno-2010
+```
+
+Gere URL **só** por `hrefLeilao()` / `hrefLote()` (nunca `` `/lote/${l.slug}` `` na mão) e
+resolva a rota dinâmica com `resolverPorIdOuSlug()`, que aceita `{id}-{slug}`, `{id}` puro e
+`{slug}` puro — os links antigos continuam abrindo. Canonical/metadata e sitemap saem na
+forma nova. *(Dívida conhecida: as telas de Venda Direta ainda linkam por slug puro.)*
+
+**2) O STATUS MANDA, A DATA NÃO** — `lib/format.ts` (`leilaoEncerrado`, `dataNoPassado`).
+
+Nunca derive "encerrado" de data vencida. Leilão com status ABERTO (3) / AO VIVO (4) e data
+prevista no passado continua **aberto** no site — agenda desatualizada é problema do
+leiloeiro. Só `status === 99` encerra. A data serve apenas pra formatar texto: onde haveria
+contagem regressiva com data já vencida, mostre a **data prevista**.
+
+**3) Leilão de parceria → redirecionamento externo** — `lib/externo.ts` +
+`components/RedirecionamentoExterno.tsx`.
+
+Quando a API manda `leilao.urlExterna` (campo "Leilão divulgação" do ERP; `urlExternaEmpresa`
+= `comprei` | `outras`), o leilão é **divulgado** por nós mas **operado por outra
+plataforma** — e `urlExterna` vem também no leilão aninhado do lote. Comportamento
+obrigatório: o card do leilão **e o do lote** não abrem a página interna; abrem um modal de
+aviso ("Você será redirecionado… será necessário cadastrar-se e habilitar-se no site de
+destino") e, ao confirmar, navegam pra URL externa **na mesma aba**. As páginas de detalhe
+(quem chegou por link direto/SEO) mostram a faixa de aviso e escondem o que é nosso —
+habilitação, auditório e caixa de lance. Deixar o visitante achar que o lance é conosco faz
+ele perder o leilão.
 
 ## 6. Componentes principais
 
 `Header`/`Footer` (shell), `Banner` (carrossel) + `Popup` (modal 1x/sessão), `LeilaoCard`/`LoteCard`,
 `FiltrosLeiloes`/`FiltrosLotes` (escrevem na URL), `Galeria` (lightbox simples), `LanceBox`
 (lance REST + tempo real + histórico), `HabilitacaoBtn`, `Categorias`, `BuscaRapida`, `Estados`
-(loading/vazio/erro), `Badge`, `auth/LoginForm` + `LogoutButton`.
+(loading/vazio/erro), `Badge`, `RedirecionamentoExterno` (aviso de leilão de parceria — §5.1),
+`auth/LoginForm` + `LogoutButton`.
 
 ## 7. Endpoints consumidos
 
@@ -109,7 +153,8 @@ exemplo-site/
 **Autenticados (reuso, via BFF proxy):** `/api/auth`, `/api/auth/refresh`, `/api/auth/logout`, `/api/userCredentials`,
 `/api/lotes/{id}/lance`, `/api/public/arrematantes/service/leiloes/{id}/habilitar`,
 `/api/arrematantes/meusFavoritos`, `/api/arrematantes/service/historico/lances`,
-`/api/arrematantes/service/leiloes`, `/api/public/globalconfigs` (clientId p/ WS).
+`/api/arrematantes/service/leiloes`, `/api/public/globalconfigs` (clientId p/ WS),
+`/api/sso/exchange` (handoff de sessão pro painel do arrematante — §8.1).
 
 ## 8. Fluxo de autenticação
 
@@ -137,6 +182,70 @@ Padrão **BFF** (o JWT nunca chega ao browser — mitiga XSS):
 > troca e o logout limpa tudo. O que **ainda não** está implementado é o *disparo automático* — não há
 > retry transparente no `/api/proxy` nem timer de renovação; hoje a renovação precisa ser chamada
 > explicitamente (ex.: ao receber 401). Num site real, plugar isso no proxy é o passo seguinte.
+
+## 8.1 ⛔ Sessão única site ↔ painel (SSO) — obrigatório em qualquer site
+
+**O problema.** O painel do arrematante (app-cliente) vive em **outro domínio** (`app.<tenant>`).
+Cookie não atravessa domínio: quem estava logado no site chegava **deslogado** no painel. Era o caso do
+botão "Auditório Virtual", que apontava direto pra `${PAINEL_URL}/auditorio/{id}` — o arrematante logado
+caía numa tela pedindo login, justo na hora do pregão.
+
+**A ponte** já existia na API: o **handoff SSO** — `POST /api/sso/exchange` (site, autenticado) devolve um
+**código de troca de uso único (TTL 60s)**; `POST /api/auth/sso/redeem` (painel) troca esse código por uma
+sessão. O que faltava era *usar* isso em todo link. Aqui o BFF que orquestra é
+**`app/api/sso/handoff/route.ts`**.
+
+### As duas camadas (implemente as duas — uma cobre a outra)
+
+1. **No login (proativo).** Ao logar/cadastrar no site, o navegador passa por
+   `/api/sso/handoff?redirect=/&voltar=<destino no site>`: o painel resgata o código, grava a sessão dele e
+   **devolve o visitante pro site**. A partir daí o painel já está logado. É navegação de página inteira
+   (`window.location`), não `router.push` — o destino é outro domínio.
+   Onde: `components/auth/LoginForm.tsx`, `components/CadastroForm.tsx`.
+2. **No link (auto-curativo).** Mesmo assim, **todo** link pro painel passa pelo handoff, via
+   `hrefPainel()`. Motivo: a sessão do painel expira/é limpa em momento **diferente** da do site (TTLs e
+   storages independentes, outro navegador, cache limpo). Sem esta camada, o dia em que a sessão do painel
+   cair sozinha o problema volta — e nada se corrige. Custo: um redirect (~centenas de ms). Custo de errar:
+   o arrematante não consegue dar lance.
+
+### A regra
+
+> **Nenhum link para o painel é escrito à mão.** Nada de `${PAINEL_URL}/rota` no JSX — sempre
+> `hrefPainel()` (`lib/painel.ts`). É o que evita que cada link novo precise "lembrar" do SSO: quem escreve
+> o link não precisa nem saber que existe SSO.
+
+```tsx
+import { hrefPainel, rotaAuditorio, rotaLotePainel } from '@/lib/painel';
+
+<a href={hrefPainel('/')}>Meu painel</a>
+<a href={hrefPainel('/meus-lances')}>Meus lances</a>
+<a href={hrefPainel(rotaAuditorio(leilaoId), { publico: true })}>Auditório Virtual</a>
+```
+
+`hrefPainel()` devolve `''` quando `NEXT_PUBLIC_PAINEL_URL` não está configurado — o chamador esconde o
+link (todos os pontos aqui já checam `PAINEL_URL`).
+
+### Os dois parâmetros do handoff
+
+- **`?anon=1`** (via `hrefPainel(rota, { publico: true })`) — o destino é rota **pública** no painel (hoje:
+  o auditório). Visitante **sem** sessão vai direto pro painel em vez de ser mandado pro `/login`; visitante
+  logado continua passando pelo handoff e chega logado. **Só** use em rota que o app-cliente declara
+  pública — sem a flag, o handoff exige sessão.
+- **`?voltar=<url>`** — URL **deste site** pra onde o painel devolve o visitante depois de resgatar o
+  código. É o modo "propagar sessão e voltar" da camada 1.
+  ⚠️ **Open-redirect:** `voltar` só aceita path interno ou URL absoluta http(s) do **mesmo domínio-raiz**
+  (`sanitizarVoltar`/`dominioRaiz` no route handler). Sem essa checagem o parâmetro viraria vetor de
+  phishing com o nosso domínio no meio do caminho. Não relaxe a validação ao adaptar pro site do cliente.
+
+### Cuidados ao portar pra um site real
+
+- **Mesmo tenant nos dois lados.** O código é resgatado **no tenant do painel** (DB-per-tenant):
+  `NEXT_PUBLIC_TENANT` (site) tem de resolver o mesmo tenant que o `VITE_TENANT`/host do app. Em produção
+  `leiloeiro.com.br` e `app.leiloeiro.com.br` são a mesma chave no `clients.php`; em dev, alinhe à mão.
+- **Falha do handoff nunca sequestra a navegação:** no modo `voltar` o BFF devolve pro site; nos demais
+  abre o painel sem código (ele pede login).
+- **Logout é do par:** o redeem vincula as duas sessões pelo `pairId` — sair de um lado derruba o outro,
+  preservando outros dispositivos.
 
 ## 9. Fluxo de lance
 

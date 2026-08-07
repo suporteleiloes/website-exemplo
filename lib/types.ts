@@ -95,10 +95,32 @@ export interface Bem {
 
 export interface LeilaoMin {
   id: number;
+  codigo?: string | null;
   slug: string;
   titulo: string | null;
   status: number;
-  statusLabel?: string;
+  statusLabel?: string | null;
+  dataProximoLeilao?: string | null;
+  instancia?: number | null;
+  /** Praça ATIVA agora (1/2/3) — escolhe entre valorInicial/valorInicial2/3 do lote. */
+  praca?: number | null;
+  // Aditivos 2026-07-30: deixam o card montar as duas praças (valor + data), o badge
+  // Judicial/Extrajudicial e o destino do clique a partir de UM só `GET /lotes` —
+  // antes era preciso um `GET /leiloes/{id}` por card.
+  data1?: string | null;
+  data2?: string | null;
+  data3?: string | null;
+  judicial?: boolean;
+  vendaDireta?: boolean;
+  /** >1 → o card leva pra listagem de lotes do leilão; ==1 → direto pro lote. */
+  totalLotes?: number | null;
+  /**
+   * LEILÃO DE PARCERIA (2026-08-07): quando preenchido, o pregão é operado por
+   * OUTRA plataforma — o card do lote não pode abrir a página interna, tem que
+   * exibir o aviso de redirecionamento. Ver `components/RedirecionamentoExterno`.
+   */
+  urlExterna?: string | null;
+  urlExternaEmpresa?: string | null;
 }
 
 export interface Leilao {
@@ -138,6 +160,17 @@ export interface Leilao {
   parcelamentoMinimoEntrada: number | null;
   leiloeiro: Leiloeiro | null;
   comitentes?: Comitente[];
+  /**
+   * LEILÃO DE PARCERIA — campo "Leilão divulgação" do ERP, exposto no nível
+   * PUBLIC. Preenchido = divulgamos o leilão aqui, mas quem opera é OUTRO
+   * leiloeiro/plataforma: o card e a página de detalhe TÊM de mandar o visitante
+   * pra `urlExterna` com o aviso de redirecionamento (comportamento obrigatório —
+   * ver `components/RedirecionamentoExterno.tsx`). Sempre http/https absoluto (a
+   * API descarta `javascript:`/`data:`/relativo). `null` = leilão próprio.
+   * `urlExternaEmpresa` é a plataforma de destino ('comprei' | 'outras').
+   */
+  urlExterna?: string | null;
+  urlExternaEmpresa?: string | null;
   _urls: { edital: string | null; auditorio: string | null };
 }
 
