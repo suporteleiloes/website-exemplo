@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { urlExternaValida, nomeDestino } from '@/lib/externo';
 
 /**
@@ -36,9 +37,26 @@ export interface AvisoProps {
   onFechar: () => void;
 }
 
-/** Modal de aviso. Renderizado só quando `aberto` (sem portal — z-index alto basta). */
+/**
+ * Modal de aviso. Renderizado só quando `aberto`.
+ *
+ * ⚠️ VAI EM PORTAL NO `document.body` — NÃO É OPCIONAL, e não é firula.
+ * O gatilho mora DENTRO do card, e card costuma ganhar `transform` no hover
+ * (elevação/escala — é o efeito mais comum numa grade de leilões). Qualquer
+ * ancestral com `transform` vira containing block: o `position: fixed` do
+ * overlay deixa de ser relativo à VIEWPORT e passa a ser relativo AO CARD. O
+ * modal aparece espremido dentro do card e "pula" a cada movimento do mouse,
+ * porque o hover cria e destrói o transform — bug real reportado por cliente.
+ * Renderizando fora da árvore do card, nenhum ancestral pode sequestrar o
+ * `fixed`. O mesmo vale pra `filter`, `backdrop-filter`, `perspective`,
+ * `contain` e `will-change`: todos criam containing block e quebram igual.
+ * Se você copiou este site, NÃO troque o portal por um z-index maior.
+ */
 export function AvisoRedirecionamento({ url, plataforma, aberto, onFechar }: AvisoProps) {
   const continuarRef = useRef<HTMLAnchorElement>(null);
+  // `document` não existe no SSR — o portal só pode montar depois da hidratação.
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
 
   useEffect(() => {
     if (!aberto) return;
@@ -55,9 +73,9 @@ export function AvisoRedirecionamento({ url, plataforma, aberto, onFechar }: Avi
     };
   }, [aberto, onFechar]);
 
-  if (!aberto) return null;
+  if (!aberto || !montado) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
       onClick={onFechar}
@@ -96,7 +114,8 @@ export function AvisoRedirecionamento({ url, plataforma, aberto, onFechar }: Avi
           </a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

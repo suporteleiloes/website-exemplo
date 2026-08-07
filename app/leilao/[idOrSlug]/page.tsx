@@ -10,7 +10,7 @@ import { Vazio } from '@/components/Estados';
 import { getLeilao, getLotes, getFiltros } from '@/lib/api';
 import { ApiException } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
-import { dataHora, dataNoPassado, leilaoEncerrado, TIPO_LEILAO } from '@/lib/format';
+import { dataHora, leilaoEncerrado, prazoLeilao, TIPO_LEILAO } from '@/lib/format';
 import { urlExternaValida } from '@/lib/externo';
 import { hrefLeilao, resolverPorIdOuSlug } from '@/lib/rota';
 import type { Filtros, Leilao, Lote } from '@/lib/types';
@@ -98,9 +98,13 @@ export default async function LeilaoPage(
             {datas.length ? datas.map((d, i) => (
               <p key={i} className="text-sm text-gray-700">
                 {i + 1}ª praça: {dataHora(d)}
-                {/* Data vencida com o leilão AINDA ABERTO no ERP: sinalizamos que é
-                    previsão, mas NÃO dizemos que encerrou — o status é quem manda. */}
-                {!encerrado && dataNoPassado(d) && <span className="text-xs text-gray-500"> (prevista)</span>}
+                {/* Quem decide se a data ainda vale como prazo é o `prazoLeilao`
+                    (lib/format.ts), não esta tela: com o leilão AINDA ABERTO no ERP
+                    e a praça vencida, sinalizamos previsão — nunca encerramento,
+                    que contradiria o selo de aberto logo acima. */}
+                {!encerrado && prazoLeilao(leilao.status, d).modo === 'data' && (
+                  <span className="text-xs text-gray-500"> (prevista)</span>
+                )}
               </p>
             )) : <p className="text-sm text-gray-500">—</p>}
           </div>

@@ -80,3 +80,33 @@ export function dataNoPassado(iso: string | null | undefined): boolean {
   const ms = new Date(iso).getTime();
   return !isNaN(ms) && ms - Date.now() <= 0;
 }
+
+export type ModoPrazo = 'contador' | 'data' | 'sem_data';
+
+/**
+ * COMO EXIBIR O PRAZO DO LEILÃO — decisão única, para TODA tela que mostra prazo.
+ *
+ * Existe porque cada tela resolvia isso do seu jeito e a combinação "leilão
+ * ABERTO + data prevista vencida" acabava virando **"Encerra em: Encerrado"** (o
+ * contador zera e imprime "Encerrado") do lado de um selo "ABERTO PARA LANCES".
+ * O visitante lê contradição e desiste de dar lance. Contador só faz sentido
+ * quando existe futuro pra contar:
+ *
+ *   encerrado (99)          → "Realizado em"  + data
+ *   data já passou, aberto  → "Data prevista" + data  (o leiloeiro não atualizou
+ *                             a agenda; o leilão segue aberto — o status manda)
+ *   em breve (1, 2)         → "Inicia em"     + contador
+ *   demais                  → "Encerra em"    + contador
+ *   sem data                → "Data a confirmar"
+ *
+ * `modo === 'contador'` é a única autorização pra rodar contagem regressiva —
+ * este site imprime a data, mas quem adicionar um contador deve olhar esse campo.
+ */
+export function prazoLeilao(status: number, ate?: string | null): { modo: ModoPrazo; rotulo: string } {
+  if (leilaoEncerrado(status)) {
+    return ate ? { modo: 'data', rotulo: 'Realizado em' } : { modo: 'sem_data', rotulo: 'Leilão realizado' };
+  }
+  if (!ate) return { modo: 'sem_data', rotulo: 'Data a confirmar' };
+  if (dataNoPassado(ate)) return { modo: 'data', rotulo: 'Data prevista' };
+  return { modo: 'contador', rotulo: status === 1 || status === 2 ? 'Inicia em' : 'Encerra em' };
+}

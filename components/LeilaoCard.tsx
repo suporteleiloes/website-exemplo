@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Leilao } from '@/lib/types';
-import { dataHora, dataNoPassado, leilaoEncerrado, TIPO_LEILAO } from '@/lib/format';
+import { dataHora, prazoLeilao, TIPO_LEILAO } from '@/lib/format';
 import { BadgeLeilao } from './Badge';
 import { fotoLeilao, PLACEHOLDER } from '@/lib/img';
 import { hrefLeilao } from '@/lib/rota';
@@ -18,14 +18,10 @@ export default function LeilaoCard({ leilao }: { leilao: Leilao }) {
   // com aviso. Ver `components/RedirecionamentoExterno.tsx`.
   const externa = urlExternaValida(leilao.urlExterna);
 
-  // Rótulo da data: "Encerrado" vem SÓ do status (99). Com o leilão ainda aberto
-  // e a data prevista já vencida, dizemos "Data prevista" em vez de "Próx." —
-  // sem nunca afirmar que encerrou. Regra em `lib/format.ts`.
-  const dataLabel = leilaoEncerrado(leilao.status)
-    ? 'Realizado em'
-    : dataNoPassado(leilao.dataProximoLeilao)
-      ? 'Data prevista:'
-      : 'Próx.:';
+  // Rótulo do prazo: decisão única em `prazoLeilao` (lib/format.ts) — o card não
+  // inventa a sua. "Encerrado" vem SÓ do status (99); com o leilão aberto e a
+  // data já vencida sai "Data prevista", nunca uma afirmação de encerramento.
+  const prazo = prazoLeilao(leilao.status, leilao.dataProximoLeilao);
 
   // O conteúdo do card é idêntico nos dois casos — só muda o wrapper clicável.
   const conteudo = (
@@ -44,7 +40,7 @@ export default function LeilaoCard({ leilao }: { leilao: Leilao }) {
           {externa && <span className="font-semibold text-marca">Leilão em site parceiro</span>}
         </div>
         <p className="mt-auto pt-2 text-xs text-gray-600">
-          {leilao.dataProximoLeilao ? `${dataLabel} ${dataHora(leilao.dataProximoLeilao)}` : ''}
+          {prazo.modo === 'sem_data' ? prazo.rotulo : `${prazo.rotulo}: ${dataHora(leilao.dataProximoLeilao)}`}
         </p>
       </div>
     </>
