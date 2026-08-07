@@ -104,6 +104,32 @@ npm run build                            # build de produção
 > **Gotcha dev:** não intercale `npm run build` com `npm run dev` no mesmo `.next` (corrompe o
 > manifesto de chunks → CSS/JS 404). Use um ou outro; se quebrar, `rm -rf .next` e reinicie.
 
+## ⛔ Nada de `<head>` escrito à mão no `app/layout.tsx`
+
+O `<head>` do App Router é hidratado em modo **singleton**: o React casa a árvore que o layout
+declara com a que o Next injetou ali (`<link>` de CSS, `<title>`, metadata). Qualquer filho
+inesperado falha a hidratação (**React #418**) e o React **descarta a árvore inteira do `<head>`** —
+levando junto o `<link rel="stylesheet">`. Resultado: **site inteiro sem estilo**, e **só no build
+de produção** (`next dev` serve o CSS por outro caminho e esconde o defeito).
+
+O filho inesperado mais fácil de escrever é um **nó de texto vazio**:
+
+```tsx
+<head>{cssVars && <style … />}</head>   {/* ⛔ cssVars === '' renderiza a string vazia */}
+```
+
+Em `<body>` isso é inofensivo — o estrago é exclusivo do `<head>`. E o caso `''` costuma ser o
+**caminho degradado** (API de config fora do ar, tenant sem branding), então passa no
+desenvolvimento e quebra justamente quando algo já está errado. Regras:
+
+- **CSS da marca**: `<style href precedence>` dentro do `<body>` — o React 19 iça pro `<head>`,
+  deduplica e mantém a ordem depois do CSS do Next (ver `varsDeCor()` em `app/layout.tsx`).
+- **`<meta>`, `<title>`, SEO**: Metadata API do Next (`export const metadata` / `generateMetadata`).
+- Se um site derivado precisar mesmo de `<head>` (ex.: `<link>` de fonte externa), que tenha
+  **só elementos estáticos** — nunca `{condição && …}` sobre string.
+- Como verificar antes de publicar: `npm run build && npm run start`, abrir a home e conferir
+  `document.styleSheets.length > 0` e o console **sem** erro #418.
+
 ## Pré-requisitos no tenant (para todas as features funcionarem)
 
 - Branding/banners: comando `app:website:seed-demo` na API.

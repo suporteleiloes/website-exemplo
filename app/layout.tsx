@@ -14,6 +14,22 @@ export const metadata: Metadata = {
   description: 'Site público de leiloeiro consumindo a API Website V2.',
 };
 
+/**
+ * Monta as variáveis CSS da marca, deixando passar só o que é plausivelmente uma
+ * cor CSS (`#1a4db3`, `rgb(…)`, `navy`). Os valores vêm da API e entram num
+ * `dangerouslySetInnerHTML` — sem esta peneira, um `</style><script>` cadastrado
+ * no branding do tenant viraria XSS em todo o site. Cor inválida é OMITIDA: vale
+ * o default de `globals.css`, que é melhor do que um valor quebrado.
+ */
+function varsDeCor(cores: SiteConfig['cores'] | undefined): string | null {
+  if (!cores) return null;
+  const valida = (v: string | undefined) => (v && /^[#a-zA-Z0-9(),.%\s-]{1,64}$/.test(v) ? v : null);
+  const decls = ([['primaria', cores.primaria], ['secundaria', cores.secundaria], ['destaque', cores.destaque]] as const)
+    .map(([nome, valor]) => (valida(valor) ? `--cor-${nome}:${valor};` : ''))
+    .join('');
+  return decls ? `:root{${decls}}` : null;
+}
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Shell carregado uma vez: branding + menus + sessão. Degrada se a API falhar.
   let config: SiteConfig | null = null;
@@ -22,15 +38,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   try { menus = (await getMenus()).result; } catch { menus = []; }
   const user = await getSessionUser().catch(() => null);
 
-  const cores = config?.cores;
-  const cssVars = cores
-    ? `:root{--cor-primaria:${cores.primaria};--cor-secundaria:${cores.secundaria};--cor-destaque:${cores.destaque};}`
-    : '';
+  const cssVars = varsDeCor(config?.cores);
 
   return (
     <html lang="pt-br">
-      <head>{cssVars && <style dangerouslySetInnerHTML={{ __html: cssVars }} />}</head>
       <body>
+        {/*
+          Cores da marca vindas da API. Renderizado com `href` + `precedence`:
+          o React 19 IÇA (hoist) esta tag para dentro do <head> e a deduplica —
+          é o jeito suportado de injetar CSS no head pelo App Router.
+
+          ⛔ NUNCA envolver isto (nem nada) num <head> escrito à mão no layout.
+          O <head> do App Router é hidratado em modo "singleton": qualquer filho
+          inesperado — inclusive o nó de TEXTO VAZIO que `{stringVazia && <x/>}`
+          produz quando a string é '' — falha a hidratação (React #418), o React
+          descarta a árvore do <head> e leva junto o <link> de CSS que o Next
+          injetou. Resultado: SITE INTEIRO SEM ESTILO, e só no build de produção
+          (em `next dev` o CSS vem por outro caminho e o defeito não aparece).
+          Por isso o teste aqui é ternário com `null`, nunca `&&` sobre string.
+        */}
+        {cssVars ? (
+          <style href="sl-cores-da-marca" precedence="high" dangerouslySetInnerHTML={{ __html: cssVars }} />
+        ) : null}
         <Header config={config} menus={menus} user={user} />
         <main className="min-h-[60vh] py-6">{children}</main>
         <Footer config={config} />
