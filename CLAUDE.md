@@ -69,12 +69,12 @@ Todo site nascido daqui carrega duas camadas obrigatórias (**detalhe e porquês
    `/site/config` no fallback.
 
 **`lib/consentimento.ts` é o CONTRATO CANÔNICO da plataforma** — todo site novo copia este shape:
-`localStorage["consentimento_cookies_v1"] = { versao, decididoEm, categorias: { necessarios,
+`localStorage["consentimento_cookies_v2"] = { versao: 2, decididoEm, categorias: { necessarios,
 preferencias, medicao, marketing } }`. Banner binário, registro granular (dá para evoluir para tela
 de categorias sem trocar o formato). ⚠️ Mudou categoria/escopo/formato ⇒ **sobe a versão da chave
-(`_v2`)** + `VERSAO_CONSENTIMENTO` + `/aviso-de-cookies`, no mesmo commit. Os 5 sites de cliente já
-publicados divergem deste shape (tabela no README §16.2) — convergir é tarefa de cada repo, e
-`lancevip` não deve ser mexido.
+(`_v3`)** + `VERSAO_CONSENTIMENTO` + `/aviso-de-cookies`, no mesmo commit. Estado da convergência dos
+sites de cliente: tabela no README §16.2 (vix/taba/gustavo já em `_v2`; `lancevip` não deve ser
+mexido — tem infra própria e o repo é editado pelo cliente).
 
 > **Contrato:** ⛔ nenhum script não-essencial carrega antes do consentimento — use
 > `quandoAutorizado(categoria, fn)`/`permite(categoria)`, nunca `<script>` de terceiro solto no

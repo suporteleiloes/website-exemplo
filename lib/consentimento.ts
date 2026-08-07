@@ -66,9 +66,17 @@ export type Consentimento = Record<Categoria, boolean>;
  * tem de subir para `_v2` ao adotar o canônico — senão o registro antigo é lido
  * pelo parser novo. Aqui a leitura falha fechada (pergunta de novo), mas a
  * versão explícita é o que torna isso previsível.
+ *
+ * ── Por que já nasce em `_v2` ────────────────────────────────────────────────
+ * A convergência dos sites de cliente (vix, taba, gustavo) MUDOU as categorias
+ * deles e obrigou cada um a subir para `_v2`. O template subiu junto — não
+ * porque o escopo daqui mudou (as quatro categorias são as mesmas), mas porque
+ * uma chave só na plataforma inteira é o que garante que o parser canônico
+ * nunca encontre um registro `_v1` de formato estrangeiro. Chave da plataforma
+ * = uma versão, em todo lugar.
  */
-export const CHAVE_CONSENTIMENTO = 'consentimento_cookies_v1';
-export const VERSAO_CONSENTIMENTO = 1;
+export const CHAVE_CONSENTIMENTO = 'consentimento_cookies_v2';
+export const VERSAO_CONSENTIMENTO = 2;
 
 /** Evento de DOM que reabre o banner (link "Preferências de cookies"). */
 export const EVENTO_ABRIR = 'sl:consentimento:abrir';

@@ -336,9 +336,9 @@ não copie a imagem para o repositório do cliente (a arte é atualizada num lug
 #### O shape canônico (todo site da plataforma usa este)
 
 ```jsonc
-// localStorage["consentimento_cookies_v1"]
+// localStorage["consentimento_cookies_v2"]
 {
-  "versao": 1,                       // valida o registro; ≠ da versão vigente ⇒ pergunta de novo
+  "versao": 2,                       // valida o registro; ≠ da versão vigente ⇒ pergunta de novo
   "decididoEm": "2026-08-07T11:20:54.921Z",
   "categorias": {
     "necessarios":  true,            // sempre true — não é opcional por definição
@@ -361,24 +361,29 @@ aparece), sincronização entre abas, revogação (`revogarConsentimento`), leit
 via `useSyncExternalStore` (sem `setState` em efeito, sem hydration mismatch).
 
 > ⚠️ **Mudou o shape ou o escopo? A versão sobe.** Nova categoria, mudança no que uma delas
-> abrange, ou formato diferente do registro ⇒ `consentimento_cookies_v2` **e**
-> `VERSAO_CONSENTIMENTO = 2`, no mesmo commit da atualização do `/aviso-de-cookies`. Registro antigo
+> abrange, ou formato diferente do registro ⇒ `consentimento_cookies_v3` **e**
+> `VERSAO_CONSENTIMENTO = 3`, no mesmo commit da atualização do `/aviso-de-cookies`. Registro antigo
 > lido com regra nova é consentimento que a pessoa nunca deu.
 
-#### ⚠️ Os 5 sites de cliente ainda divergem deste canônico
+#### Estado da convergência nos sites de cliente
 
-Os sites ganharam o banner antes de o contrato existir e gravam **formatos diferentes na mesma
-chave** `consentimento_cookies_v1`. Não quebra nada hoje (domínios distintos, storage por origem),
-mas **é dívida**: convergir exige subir a chave para `_v2` no site, senão o parser canônico lê um
-registro antigo com outro shape.
+Os sites ganharam o banner antes de o contrato existir e gravavam **formatos diferentes na mesma
+chave** `consentimento_cookies_v1`. Isso não quebrava nada (domínios distintos, storage por origem),
+mas era dívida: o parser canônico leria um registro estrangeiro. A convergência mudou as categorias
+em cada site, então **a chave subiu para `_v2` em todos** — inclusive aqui, para a plataforma inteira
+ficar numa versão só. O preço é conhecido e aceito: quem já tinha decidido é perguntado **uma vez a
+mais**; herdar em silêncio um "sim" dado para outro escopo seria consentimento que ninguém deu.
 
-| Site | Grava hoje | Para convergir |
+| Site | Estado | Observação |
 |---|---|---|
-| `vixleiloes.com.br`, `rogeriomenezes` | `{versao, decididoEm, categorias:{necessarios, preferencias, medicao}}` | Já é o formato certo; falta a categoria **`marketing`** → chave `_v2` + declarar a categoria no aviso de cookies |
-| `tabaleiloes.com.br`, `gustavoleiloeiro` | `{decisao:'todos'\|'essenciais', essenciais, analiticos, marketing, decididoEm}` | Trocar pelo registro versionado; `analiticos`→`medicao`, acrescentar `preferencias` → chave `_v2` |
-| `lancevip.com.br` | infra própria (`lib/analytics/consentimento.ts`, 4 categorias: `necessarios`/`desempenho`/`funcionalidade`/`marketing`, chave `lv_consentimento`) | **Não alterar** — repositório editado pelo cliente. Se um dia convergir: `desempenho`→`medicao`, `funcionalidade`→`preferencias` |
+| `exemplo-site` (este template) | ✅ `_v2` | Categorias inalteradas; versão subiu para acompanhar a plataforma |
+| `vixleiloes.com.br` | ✅ `_v2` | Ganhou `marketing`; `Analytics.tsx` separa GTM/GA4 (`medicao`) do Meta Pixel (`marketing`) |
+| `tabaleiloes.com.br`, `gustavoleiloeiro.com.br` | ✅ `_v2` | Trocaram `{decisao, essenciais, analiticos, marketing}` pelo registro canônico (`analiticos`→`medicao`, ganharam `preferencias`) |
+| `rogeriomenezes.com.br` | 🚧 em convergência | Mesmo caminho do vix (falta `marketing` → `_v2`) |
+| `lancevip.com.br` | ⛔ não alterar | Infra própria (`lib/analytics/consentimento.ts`, chave `lv_consentimento`), repositório editado pelo cliente. Se um dia convergir: `desempenho`→`medicao`, `funcionalidade`→`preferencias` |
 
-Alinhar cada site é tarefa **daquele repositório** (e do dono dele), não deste template.
+Alinhar cada site é tarefa **daquele repositório** (e do dono dele), não deste template — mas o shape
+vem daqui, e site novo já nasce com ele.
 
 > **⛔ O contrato: nenhum script não-essencial pode carregar antes do consentimento.**
 > Analytics, pixel de remarketing, mapa de calor, chat de terceiro, vídeo com cookie de perfil —
@@ -409,7 +414,7 @@ Regras do banner que **não devem ser revertidas** ao adaptar para um cliente:
 - **Revogar tem de ser tão fácil quanto aceitar** — daí o link "Preferências de cookies" no rodapé
   (`components/PreferenciasCookies.tsx`, forma **canônica**: reabre o banner sem apagar a decisão
   vigente). Um botão dentro do próprio banner não serve: o banner só existe antes da decisão.
-- Mudou o que o "Aceitar todos" abrange? **Incremente a versão da chave** (`_v2`): um "sim" dado
+- Mudou o que o "Aceitar todos" abrange? **Incremente a versão da chave** (hoje `_v2` ⇒ `_v3`): um "sim" dado
   para o escopo antigo não vale para o novo.
 
 ### 16.3 LGPD — páginas legais

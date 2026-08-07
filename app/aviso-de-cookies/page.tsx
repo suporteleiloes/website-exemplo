@@ -7,7 +7,7 @@
  * realmente usa. Ligou GA4, Pixel, mapa de calor ou vídeo com cookie de perfil?
  * Acrescente aqui, no mesmo commit — declarar uma coisa e coletar outra é o
  * defeito que a LGPD pune, não a coleta em si. Categoria nova ⇒ subir a versão
- * da chave (`_v2`) em `lib/consentimento.ts`.
+ * da chave (hoje `_v2`; a próxima é `_v3`) em `lib/consentimento.ts`.
  *
  * Se o leiloeiro tiver aviso próprio, cadastre no CMS (slugs de `SLUGS`): o CMS
  * sempre vence este texto.
