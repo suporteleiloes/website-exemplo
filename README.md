@@ -83,8 +83,10 @@ exemplo-site/
 ├── lib/                      # config, types, api (fetch V2), auth (sessão), realtime (WS), format, img,
 │                             # rota (URL canônica {id}-{slug}), externo (leilão de parceria) — ver §5.1,
 │                             # painel (links pro painel do arrematante, SEMPRE via SSO) — ver §8.1,
-│                             # consentimento (gate LGPD), pagina-cms, legal — ver §16
+│                             # consentimento (gate LGPD), pagina-cms, legal — ver §16,
+│                             # seo (URL absoluta/canonical a partir do siteUrl da API) — ver §5.2
 ├── scripts/spec-endpoints.mjs# spec dos endpoints (npm run spec)
+├── scripts/spec-seo.mjs      # guarda de regressão do lib/seo.ts (npm run spec:seo) — ver §5.2
 ├── README.md                 # este arquivo
 └── PENDENCIAS-API.md         # lacunas/melhorias encontradas na API
 ```
@@ -141,6 +143,24 @@ destino") e, ao confirmar, navegam pra URL externa **na mesma aba**. As páginas
 (quem chegou por link direto/SEO) mostram a faixa de aviso e escondem o que é nosso —
 habilitação, auditório e caixa de lance. Deixar o visitante achar que o lance é conosco faz
 ele perder o leilão.
+
+### 5.2 ⛔ `generateMetadata` nunca lança — `siteUrl` é dado externo
+
+No App Router o `generateMetadata` roda no **mesmo render da página**: uma exceção lá dentro
+derruba a **rota inteira** (o visitante cai no `error.tsx`), não só a metadata.
+
+Já aconteceu em produção: a API devolveu `GET /site/config → { siteUrl: "https://www.127.0.0.1" }`
+e o `new URL(hrefLeilao(leilao), cfg.siteUrl)` do canonical lançou `TypeError: Invalid URL` —
+**todas** as páginas de leilão e de lote do site saíram do ar, com o site respondendo HTTP 200.
+
+`cfg.siteUrl` é preenchido por humano no ERP do leiloeiro: pode vir `null`, vazio, sem esquema
+(`www.site.com.br`), com lixo ou apontando pra loopback. `if (cfg?.siteUrl)` não é validação.
+
+**Toda** URL absoluta derivada dele passa por `lib/seo.ts` — `canonicalDe()` no canonical,
+`urlAbsoluta()` no `openGraph.url`/JSON-LD, `baseSite()` no `metadataBase`/`sitemap.ts`/`robots.ts`.
+Entrada inválida degrada omitindo o campo (canonical relativo sem `metadataBase` viraria
+`http://localhost:3000/...` — pior que canonical nenhum). Guarda: `npm run spec:seo`.
+Detalhamento e demais regras: `CLAUDE.md`.
 
 ## 6. Componentes principais
 

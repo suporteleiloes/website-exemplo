@@ -98,11 +98,44 @@ npm install
 cp .env.local.example .env.local        # ajuste NEXT_PUBLIC_* se necessário
 npm run dev                              # http://localhost:3100 (seta NODE_TLS_REJECT_UNAUTHORIZED=0 p/ cert dev)
 npm run spec                             # valida os endpoints da Website V2
+npm run spec:seo                         # guarda de regressão do lib/seo.ts (não bate na API)
 npm run build                            # build de produção
 ```
 
 > **Gotcha dev:** não intercale `npm run build` com `npm run dev` no mesmo `.next` (corrompe o
 > manifesto de chunks → CSS/JS 404). Use um ou outro; se quebrar, `rm -rf .next` e reinicie.
+
+## ⛔ `generateMetadata` NUNCA lança — `siteUrl` é dado externo, valide
+
+No App Router o `generateMetadata` roda no **mesmo render da página**. Uma exceção lá dentro não
+degrada só a metadata: derruba a **rota inteira** e o visitante cai no `error.tsx`. Metadata é
+enfeite; página fora do ar é P0.
+
+**Incidente real (site da Taba, 2026-08-07).** A API devolveu `GET /site/config →
+{ siteUrl: "https://www.127.0.0.1" }` (config de tenant errada, herdada da migração) e a página
+fazia `new URL(hrefLeilao(leilao), cfg.siteUrl)` pra montar o canonical. `https://www.127.0.0.1`
+**não é URL válida** — o parser WHATWG tenta ler `www.127.0.0.1` como IPv4 (o último rótulo é
+numérico), acha 5 componentes e falha. `TypeError: Invalid URL` → **todas** as páginas `/leilao/*`
+e `/lote/*` no error boundary. O site respondia HTTP 200 e mesmo assim nenhum leilão abria.
+
+Regras:
+
+- **`cfg.siteUrl` é entrada não-confiável.** Quem preenche é o leiloeiro, no ERP. Pode vir `null`,
+  vazio, só espaço, sem esquema (`www.site.com.br`), com lixo, ou apontando pra loopback.
+  `if (cfg?.siteUrl)` **não** é validação — truthiness não diz que a string parseia.
+- **Toda URL absoluta montada a partir dela passa por `lib/seo.ts`**: `canonicalDe()` pro canonical,
+  `urlAbsoluta()` pro `openGraph.url`/JSON-LD, `baseSite()` pro `metadataBase`, `sitemap.ts` e
+  `robots.ts`. Nunca `new URL(x, cfg.siteUrl)` cru.
+- **Degrade omitindo, não emitindo relativo.** Sem `metadataBase` no layout, canonical relativo é
+  resolvido contra `http://localhost:3000` — canonical apontando pra localhost é pior que nenhum.
+- **`getSiteConfig().catch(() => null)` não cobre isso.** Protege contra a API cair, não contra a
+  API responder 200 com um `siteUrl` lixo — que foi exatamente o caso.
+- **Vale pra qualquer operação arriscada dentro do `generateMetadata`**: parse de data, acesso
+  encadeado a payload da API, `JSON.parse`. Envolva em `safe()`/try-catch e devolva um fallback.
+- `metadataBase: new URL(SITE_URL)` em **escopo de módulo** (`export const metadata = { … }`) é
+  ainda pior: lança na avaliação do módulo, antes de qualquer error boundary — o build/boot morre.
+  Se o site derivado usar isso, o valor tem que passar por `baseSite()` com fallback literal.
+- Guarda de regressão: `npm run spec:seo` (21 asserções, não bate na API). Rode ao mexer em SEO.
 
 ## ⛔ Nada de `<head>` escrito à mão no `app/layout.tsx`
 
