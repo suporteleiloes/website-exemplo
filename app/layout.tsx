@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Messenger from '@/components/Messenger';
+import BannerCookies from '@/components/BannerCookies';
 import { WIDGET_SLUG } from '@/lib/config';
 import { getSiteConfig, getMenus } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
@@ -34,6 +35,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main className="min-h-[60vh] py-6">{children}</main>
         <Footer config={config} />
         <Messenger slug={WIDGET_SLUG} />
+        {/*
+          Banner de consentimento (LGPD). Fica no shell para valer em todas as
+          rotas. ⛔ Todo script não essencial (analytics, pixel, mapa de calor)
+          tem de passar por `quandoAutorizado()` de `lib/consentimento.ts` —
+          carregar antes da escolha do visitante é tratamento sem base legal.
+        */}
+        <BannerCookies />
       </body>
     </html>
   );

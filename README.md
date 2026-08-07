@@ -74,11 +74,16 @@ exemplo-site/
 │   ├── api/auth/refresh      # BFF: troca o refresh token por um novo par (rotação de uso único)
 │   ├── api/auth/logout       # BFF: revoga sessão + limpa cookies
 │   ├── api/sso/handoff       # BFF: ponte de sessão site → painel do arrematante — ver §8.1
-│   └── api/proxy/[...path]   # BFF: proxy autenticado (anexa JWT do cookie)
-├── components/               # UI (cards, filtros, galeria, banner, popup, lance, habilitação, auth)
+│   ├── api/proxy/[...path]   # BFF: proxy autenticado (anexa JWT do cookie)
+│   ├── politica-de-privacidade/  # páginas legais (CMS do tenant + texto MODELO) — ver §16
+│   ├── aviso-de-cookies/         #  idem
+│   └── termos-de-uso/            #  idem
+├── components/               # UI (cards, filtros, galeria, banner, popup, lance, habilitação, auth),
+│                             # SeloSL + BannerCookies + PaginaConteudo — ver §16
 ├── lib/                      # config, types, api (fetch V2), auth (sessão), realtime (WS), format, img,
 │                             # rota (URL canônica {id}-{slug}), externo (leilão de parceria) — ver §5.1,
-│                             # painel (links pro painel do arrematante, SEMPRE via SSO) — ver §8.1
+│                             # painel (links pro painel do arrematante, SEMPRE via SSO) — ver §8.1,
+│                             # consentimento (gate LGPD), pagina-cms, legal — ver §16
 ├── scripts/spec-endpoints.mjs# spec dos endpoints (npm run spec)
 ├── README.md                 # este arquivo
 └── PENDENCIAS-API.md         # lacunas/melhorias encontradas na API
@@ -95,6 +100,7 @@ exemplo-site/
 | `/login` | Login do arrematante | `/api/auth` (via BFF) |
 | `/conta` | Meus dados, favoritos, lances, leilões habilitados | endpoints autenticados (via proxy) |
 | `/quero-vender` | Formulário de quem quer vender bens (vira lead no CRM + Negócio no funil) | `/quero-vender`, `/site/config` |
+| `/politica-de-privacidade`, `/aviso-de-cookies`, `/termos-de-uso` | Páginas legais — texto do CMS do leiloeiro quando existir, MODELO genérico quando não (§16) | `/pages/{slug}`, `/site/config` |
 
 ### 5.1 ⛔ Três regras do catálogo (obrigatórias em qualquer site sobre a Website V2)
 
@@ -142,7 +148,8 @@ ele perder o leilão.
 `FiltrosLeiloes`/`FiltrosLotes` (escrevem na URL), `Galeria` (lightbox simples), `LanceBox`
 (lance REST + tempo real + histórico), `HabilitacaoBtn`, `Categorias`, `BuscaRapida`, `Estados`
 (loading/vazio/erro), `Badge`, `RedirecionamentoExterno` (aviso de leilão de parceria — §5.1),
-`auth/LoginForm` + `LogoutButton`.
+`auth/LoginForm` + `LogoutButton`, `SeloSL` (selo da plataforma no rodapé — §16), `BannerCookies` +
+`PreferenciasCookies` (consentimento LGPD — §16), `PaginaConteudo` (páginas legais/institucionais).
 
 ## 7. Endpoints consumidos
 
@@ -298,6 +305,136 @@ o endpoint e a rota BFF já existem, falta só o disparo automático.
 3. Evolua os componentes/estilos (Tailwind + CSS vars já mapeiam as cores do leiloeiro).
 4. Rode `npm run spec` sempre que a API mudar — é o **contrato vivo** dos endpoints de site.
 5. Ative o WebSocket setando `NEXT_PUBLIC_REALTIME_URL` quando o gateway do tenant estiver disponível.
+6. **Não remova o selo da SL nem a camada de LGPD** — e leve as páginas legais para revisão jurídica
+   do leiloeiro antes do go-live (§16). Itens de checklist em
+   `../api-v2/docs/openapi/CHECKLIST-LANCAMENTO-SITE.md`.
+
+## 16. ⛔ Selo da SL e LGPD — obrigatórios em todo site
+
+Duas camadas que **todo site feito sobre este template carrega**. Não são enfeite: uma é identidade
+da plataforma, a outra é requisito legal — e é justamente o que um site novo esquece.
+
+### 16.1 Selo da Suporte Leilões (rodapé)
+
+`components/SeloSL.tsx`, já montado no `Footer`. Arte em
+`https://static.suporteleiloes.com.br/selo.png` (198×69), link para
+`https://www.suporteleiloes.com.br` em nova aba com `rel="noopener noreferrer"`,
+`width`/`height` explícitos (sem layout shift) e `alt` descritivo.
+
+Fica na **última coluna do rodapé, abaixo dos dados do leiloeiro**, discreto (~160px). Ajuste o
+tamanho pelo prop (`<SeloSL largura={140} />`) e a posição pelo `className` — mas **não remova** e
+não copie a imagem para o repositório do cliente (a arte é atualizada num lugar só).
+
+### 16.2 LGPD — banner de consentimento
+
+| Peça | Arquivo | Papel |
+|---|---|---|
+| Gate (**contrato canônico**) | `lib/consentimento.ts` | Lê/grava a decisão e avisa quem depende dela |
+| Banner | `components/BannerCookies.tsx` | Coleta a decisão (montado no `app/layout.tsx`) |
+| Revogação | `components/PreferenciasCookies.tsx` | Link do rodapé que reabre o banner |
+
+#### O shape canônico (todo site da plataforma usa este)
+
+```jsonc
+// localStorage["consentimento_cookies_v1"]
+{
+  "versao": 1,                       // valida o registro; ≠ da versão vigente ⇒ pergunta de novo
+  "decididoEm": "2026-08-07T11:20:54.921Z",
+  "categorias": {
+    "necessarios":  true,            // sempre true — não é opcional por definição
+    "preferencias": false,           // funcionalidade: filtros/exibição lembrados no dispositivo
+    "medicao":      false,           // analytics, desempenho, mapa de calor
+    "marketing":    false            // pixel, remarketing, público personalizado
+  }
+}
+```
+
+Por que **registro versionado com categorias**, e não um par `aceito/essenciais`: o banner padrão é
+binário (dois botões), mas o registro já é granular — um site que amanhã precisar de uma tela
+"aceito medição, recuso marketing" ganha isso **sem trocar de formato e sem invalidar o
+consentimento de quem já respondeu**. As quatro categorias são superset das usadas nos sites atuais
+e são exatamente as declaradas em `/aviso-de-cookies` (código e política têm de casar).
+
+Garantias implementadas: `Global Privacy Control`/`Do Not Track` lidos como recusa (o banner nem
+aparece), sincronização entre abas, revogação (`revogarConsentimento`), leitura **falha fechada**
+(JSON corrompido, storage bloqueado ou versão diferente ⇒ trata como "não decidiu") e store externo
+via `useSyncExternalStore` (sem `setState` em efeito, sem hydration mismatch).
+
+> ⚠️ **Mudou o shape ou o escopo? A versão sobe.** Nova categoria, mudança no que uma delas
+> abrange, ou formato diferente do registro ⇒ `consentimento_cookies_v2` **e**
+> `VERSAO_CONSENTIMENTO = 2`, no mesmo commit da atualização do `/aviso-de-cookies`. Registro antigo
+> lido com regra nova é consentimento que a pessoa nunca deu.
+
+#### ⚠️ Os 5 sites de cliente ainda divergem deste canônico
+
+Os sites ganharam o banner antes de o contrato existir e gravam **formatos diferentes na mesma
+chave** `consentimento_cookies_v1`. Não quebra nada hoje (domínios distintos, storage por origem),
+mas **é dívida**: convergir exige subir a chave para `_v2` no site, senão o parser canônico lê um
+registro antigo com outro shape.
+
+| Site | Grava hoje | Para convergir |
+|---|---|---|
+| `vixleiloes.com.br`, `rogeriomenezes` | `{versao, decididoEm, categorias:{necessarios, preferencias, medicao}}` | Já é o formato certo; falta a categoria **`marketing`** → chave `_v2` + declarar a categoria no aviso de cookies |
+| `tabaleiloes.com.br`, `gustavoleiloeiro` | `{decisao:'todos'\|'essenciais', essenciais, analiticos, marketing, decididoEm}` | Trocar pelo registro versionado; `analiticos`→`medicao`, acrescentar `preferencias` → chave `_v2` |
+| `lancevip.com.br` | infra própria (`lib/analytics/consentimento.ts`, 4 categorias: `necessarios`/`desempenho`/`funcionalidade`/`marketing`, chave `lv_consentimento`) | **Não alterar** — repositório editado pelo cliente. Se um dia convergir: `desempenho`→`medicao`, `funcionalidade`→`preferencias` |
+
+Alinhar cada site é tarefa **daquele repositório** (e do dono dele), não deste template.
+
+> **⛔ O contrato: nenhum script não-essencial pode carregar antes do consentimento.**
+> Analytics, pixel de remarketing, mapa de calor, chat de terceiro, vídeo com cookie de perfil —
+> todos passam por `quandoAutorizado(categoria, fn)` (ou checam `permite(categoria)`). Injetar
+> `<script>` de terceiro direto no layout, via `next/script` ou `dangerouslySetInnerHTML`, **fura o
+> gate**: o banner vira decoração e o site coleta sem base legal, que é exatamente o que a LGPD pune.
+
+```ts
+// components/Analytics.tsx (client) — o único jeito certo de ligar GA4/Pixel neste template
+useEffect(() => quandoAutorizado('medicao', () => {
+  const s = document.createElement('script');
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXX';
+  document.head.appendChild(s);
+}), []);
+```
+
+Este template **não carrega nenhum terceiro** — por isso não há componente de Analytics aqui, só o
+contrato acima. O que existe de armazenamento próprio já respeita a regra: o `Messenger` só cria o
+identificador da conversa quando o visitante **abre** o atendimento (serviço que ele pediu) e só
+persiste a marcação de "visitante recorrente" com a categoria `marketing` autorizada.
+
+Regras do banner que **não devem ser revertidas** ao adaptar para um cliente:
+
+- **Sem dark pattern**: "Aceitar todos" e "Apenas essenciais" com o mesmo peso visual. Recusa
+  escondida atrás de "gerenciar preferências" invalida o consentimento (ele deixa de ser livre).
+- **Fechar sem escolher = apenas essenciais** (`Esc` inclusive). Silêncio não é consentimento.
+- **Sem layout shift**: o banner é `fixed`, nunca empurra o conteúdo.
+- **Revogar tem de ser tão fácil quanto aceitar** — daí o link "Preferências de cookies" no rodapé
+  (`components/PreferenciasCookies.tsx`, forma **canônica**: reabre o banner sem apagar a decisão
+  vigente). Um botão dentro do próprio banner não serve: o banner só existe antes da decisão.
+- Mudou o que o "Aceitar todos" abrange? **Incremente a versão da chave** (`_v2`): um "sim" dado
+  para o escopo antigo não vale para o novo.
+
+### 16.3 LGPD — páginas legais
+
+`/politica-de-privacidade`, `/aviso-de-cookies` e `/termos-de-uso`, linkadas no rodapé.
+
+**Estratégia (a mesma dos sites de cliente): CMS primeiro, MODELO como rede.** `lib/pagina-cms.ts`
+busca `GET /pages/{slug}` tentando os slugs candidatos do tenant (`politica-de-privacidade`,
+`politica-privacidade`, …) e extrai só os blocos de texto (h1–h4, p) — **nunca**
+`dangerouslySetInnerHTML` com HTML do CMS. Achou? É o texto que o jurídico do leiloeiro aprovou e
+ele manda. Não achou? Entra o texto MODELO da própria página, parametrizado por `GET /site/config`
+(nome, e-mail e telefone do leiloeiro via `lib/legal.ts`) — **nada hardcoded de cliente**.
+
+> ### ⚠️ O texto MODELO NÃO substitui revisão jurídica
+>
+> Não somos advogados. Os textos padrão cobrem o mínimo da LGPD (dados coletados, finalidade e base
+> legal, compartilhamento, retenção, direitos do art. 18, cookies, canal do encarregado), mas
+> prazos, operadores contratados, identificação do DPO e as condições comerciais do leiloeiro
+> variam caso a caso. **Antes do go-live:** peça ao leiloeiro os documentos aprovados pelo jurídico
+> dele e cadastre-os no CMS do ERP. Enquanto isso não acontece, a página exibe o aviso "conteúdo
+> informativo" com o canal de contato — solução temporária, que precisa constar do checklist de
+> lançamento. Os termos de uso, de propósito, **não fixam** comissão, prazos ou penalidades: essas
+> condições estão no **edital** de cada leilão, que prevalece.
+
+---
 
 > A documentação canônica da API está em `../api-v2/docs/openapi/GUIA-WEBSITE-V2.md` e o aprendizado
 > desta POC (evolutivo) em `../api-v2/docs/openapi/POC-EXEMPLO-SITE-APRENDIZADO.md`.

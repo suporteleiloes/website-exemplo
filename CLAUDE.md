@@ -56,6 +56,31 @@ a sessão do painel expira em momento diferente da do site e sem essa camada o p
 
 **Detalhe completo, com os porquês e os cuidados de portabilidade: `README.md §8.1`.**
 
+## ⛔ Selo da SL + LGPD — não remover ao copiar o template
+
+Todo site nascido daqui carrega duas camadas obrigatórias (**detalhe e porquês: `README.md §16`**):
+
+1. **Selo da Suporte Leilões** no rodapé — `components/SeloSL.tsx` (arte em
+   `static.suporteleiloes.com.br/selo.png`, link em nova aba, `width`/`height` explícitos).
+2. **LGPD**: banner de consentimento (`components/BannerCookies.tsx` + gate em
+   `lib/consentimento.ts`), link "Preferências de cookies" no rodapé (revogar tem de ser tão fácil
+   quanto aceitar) e as páginas `/politica-de-privacidade`, `/aviso-de-cookies`, `/termos-de-uso` —
+   conteúdo do **CMS** do tenant (`GET /pages/{slug}`) com texto **MODELO** parametrizado por
+   `/site/config` no fallback.
+
+**`lib/consentimento.ts` é o CONTRATO CANÔNICO da plataforma** — todo site novo copia este shape:
+`localStorage["consentimento_cookies_v1"] = { versao, decididoEm, categorias: { necessarios,
+preferencias, medicao, marketing } }`. Banner binário, registro granular (dá para evoluir para tela
+de categorias sem trocar o formato). ⚠️ Mudou categoria/escopo/formato ⇒ **sobe a versão da chave
+(`_v2`)** + `VERSAO_CONSENTIMENTO` + `/aviso-de-cookies`, no mesmo commit. Os 5 sites de cliente já
+publicados divergem deste shape (tabela no README §16.2) — convergir é tarefa de cada repo, e
+`lancevip` não deve ser mexido.
+
+> **Contrato:** ⛔ nenhum script não-essencial carrega antes do consentimento — use
+> `quandoAutorizado(categoria, fn)`/`permite(categoria)`, nunca `<script>` de terceiro solto no
+> layout. **Aviso:** o texto legal MODELO **exige revisão jurídica do leiloeiro antes do go-live** —
+> o caminho certo é o cliente cadastrar o documento dele no CMS.
+
 ## Arquitetura (resumo)
 
 - **BFF auth**: JWT/refresh em cookies httpOnly (`app/api/auth/*`), proxy autenticado

@@ -4,6 +4,7 @@ import {
   getBootstrap, getAjuda, getArtigo, getHistorico, enviarMensagem, getProativas,
   type WidgetBootstrap, type AjudaArtigoRef, type AjudaColecao, type AjudaArtigo, type ConversaMsg, type Proativa,
 } from '@/lib/widget';
+import { permite } from '@/lib/consentimento';
 
 type View = 'inicio' | 'conversa' | 'ajuda' | 'artigo' | 'novidades';
 
@@ -70,15 +71,34 @@ export default function Messenger({ slug }: { slug: string }) {
   const [proativa, setProativa] = useState<Proativa | null>(null);
   const [proativaFechada, setProativaFechada] = useState(false);
 
-  // bootstrap + session
-  useEffect(() => {
-    getBootstrap(slug).then(setBoot);
-    if (typeof window !== 'undefined') {
-      let sid = localStorage.getItem('copilotsl_sid');
-      if (!sid) { sid = crypto.randomUUID?.() || String(Date.now()) + Math.random(); localStorage.setItem('copilotsl_sid', sid); }
-      sessionRef.current = sid;
+  // bootstrap (o identificador de conversa é criado só quando a conversa abre)
+  useEffect(() => { getBootstrap(slug).then(setBoot); }, [slug]);
+
+  /**
+   * Identificador da conversa — criado sob demanda, nunca na montagem.
+   *
+   * LGPD: gravar um identificador persistente em quem só passou pela home é
+   * coleta sem finalidade. Aqui o `sid` só nasce quando o visitante ABRE o
+   * atendimento — aí ele é estritamente necessário ao serviço que a própria
+   * pessoa pediu (e por isso não depende do banner de cookies).
+   */
+  const garantirSid = useCallback(() => {
+    if (sessionRef.current) return sessionRef.current;
+    if (typeof window === 'undefined') return '';
+    let sid = '';
+    try {
+      sid = localStorage.getItem('copilotsl_sid') || '';
+      if (!sid) {
+        sid = crypto.randomUUID?.() || String(Date.now()) + Math.random();
+        localStorage.setItem('copilotsl_sid', sid);
+      }
+    } catch {
+      // Armazenamento bloqueado: conversa vale só para esta navegação.
+      sid = sid || crypto.randomUUID?.() || String(Date.now()) + Math.random();
     }
-  }, [slug]);
+    sessionRef.current = sid;
+    return sid;
+  }, []);
 
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, view]);
 
@@ -92,9 +112,18 @@ export default function Messenger({ slug }: { slug: string }) {
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     // Segmento simples: 1ª visita (novo) × recorrente, persistido em localStorage.
-    const jaVisitou = localStorage.getItem('copilotsl_visitou') === '1';
-    const segmento = jaVisitou ? 'retornantes' : 'novos';
-    localStorage.setItem('copilotsl_visitou', '1');
+    // ⚠️ LGPD: reconhecer o visitante entre sessões, para escolher a mensagem
+    // proativa, é armazenamento de MARKETING — só grava com a categoria
+    // autorizada (ver `lib/consentimento.ts`). Sem consentimento a régua continua
+    // funcionando, tratando todo mundo como "novos"; o que não acontece é a
+    // marcação persistir no dispositivo.
+    let segmento: 'novos' | 'retornantes' = 'novos';
+    if (permite('marketing')) {
+      try {
+        segmento = localStorage.getItem('copilotsl_visitou') === '1' ? 'retornantes' : 'novos';
+        localStorage.setItem('copilotsl_visitou', '1');
+      } catch { /* armazenamento bloqueado: segue como "novos" */ }
+    }
 
     getProativas(slug).then((lista) => {
       if (cancelado || !lista.length) return;
@@ -130,6 +159,9 @@ export default function Messenger({ slug }: { slug: string }) {
     abrirConversa();
   }
 
+  // O identificador nasce aqui: quando o visitante ABRE o atendimento.
+  useEffect(() => { if (aberto) garantirSid(); }, [aberto, garantirSid]);
+
   const carregarHistorico = useCallback(async () => {
     if (!sessionRef.current) return;
     const { status, messages } = await getHistorico(slug, sessionRef.current);
@@ -146,6 +178,7 @@ export default function Messenger({ slug }: { slug: string }) {
   }, [aberto, view, carregarHistorico]);
 
   async function abrirConversa() {
+    garantirSid(); // abrir a conversa é o gatilho do identificador (ver garantirSid)
     setView('conversa');
     if (msgs.length === 0 && boot) setMsgs([{ role: 'support', text: boot.boasVindas }]);
     carregarHistorico();
@@ -158,7 +191,7 @@ export default function Messenger({ slug }: { slug: string }) {
     setTexto('');
     setMsgs((m) => [...m.filter((x) => !(m.length === 1 && x.role === 'support' && x.text === boot?.boasVindas)), { role: 'user', text: t }]);
     setEnviando(true); enviandoRef.current = true;
-    const d = await enviarMensagem(slug, sessionRef.current, t);
+    const d = await enviarMensagem(slug, garantirSid(), t);
     if (!d.ok && d.motivo === 'widget_disabled') setMsgs((m) => [...m, { role: 'support', text: 'Atendimento indisponível no momento.' }]);
     else await carregarHistorico();
     setEnviando(false); enviandoRef.current = false;
