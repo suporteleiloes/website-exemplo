@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Messenger from '@/components/Messenger';
 import BannerCookies from '@/components/BannerCookies';
+import Analytics from '@/components/Analytics';
 import { WIDGET_SLUG } from '@/lib/config';
 import { getSiteConfig, getMenus } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
@@ -71,6 +73,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           carregar antes da escolha do visitante é tratamento sem base legal.
         */}
         <BannerCookies />
+        {/*
+          Tags de rastreamento (GA4/GTM/Meta Pixel) do tenant. IDs vêm da API
+          (`config.analytics`), nunca hardcoded; a injeção passa SEMPRE pelo gate
+          de consentimento de `lib/consentimento.ts`. `Suspense` é obrigatório
+          porque `Analytics` usa `useSearchParams` (pageview em navegação SPA).
+        */}
+        <Suspense fallback={null}>
+          <Analytics analytics={config?.analytics} />
+        </Suspense>
       </body>
     </html>
   );
