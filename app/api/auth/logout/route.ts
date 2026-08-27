@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE, REFRESH_COOKIE } from '@/lib/config';
 
 export async function POST() {
-  const jwt = cookies().get(JWT_COOKIE)?.value;
+  const jwt = (await cookies()).get(JWT_COOKIE)?.value;
   if (jwt) {
     // Best-effort: revoga a sessão no backend.
     try {

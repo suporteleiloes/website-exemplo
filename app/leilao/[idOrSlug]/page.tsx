@@ -12,7 +12,8 @@ import type { Metadata } from 'next';
 import type { Filtros, Leilao, Lote, Imagem } from '@/lib/types';
 
 // SEO por leilão: título = título do leilão; descrição com nº de lotes e modalidade.
-export async function generateMetadata({ params }: { params: { idOrSlug: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ idOrSlug: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const leilao = await getLeilao(params.idOrSlug).catch(() => null);
   if (!leilao) return { title: 'Leilão' };
   const cod = leilao.codigo || (leilao.numero ? `${leilao.numero}${leilao.ano ? '/' + leilao.ano : ''}` : '');
@@ -45,7 +46,11 @@ function dataCurta(iso: string | null): string {
   return `${dm} · ${hm}`;
 }
 
-export default async function LeilaoPage({ params, searchParams }: { params: { idOrSlug: string }; searchParams: SP }) {
+export default async function LeilaoPage(
+  props: { params: Promise<{ idOrSlug: string }>; searchParams: Promise<SP> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   let leilao: Leilao;
   try { leilao = await getLeilao(params.idOrSlug); }
   catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }

@@ -6,13 +6,13 @@ import { cookies } from 'next/headers';
 import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE } from './config';
 import type { SessionUser } from './types';
 
-export function getJwt(): string | undefined {
-  return cookies().get(JWT_COOKIE)?.value;
+export async function getJwt(): Promise<string | undefined> {
+  return (await cookies()).get(JWT_COOKIE)?.value;
 }
 
 /** fetch server-side autenticado contra a API (base completa, não só V2). */
 export async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const jwt = getJwt();
+  const jwt = await getJwt();
   const headers = new Headers(init.headers);
   headers.set(TENANT_HEADER, TENANT);
   headers.set('Accept', 'application/json');
@@ -22,7 +22,7 @@ export async function authFetch(path: string, init: RequestInit = {}): Promise<R
 
 /** Reidrata o usuário logado a partir do JWT (GET /api/userCredentials). null se não logado/expirado. */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  if (!getJwt()) return null;
+  if (!(await getJwt())) return null;
   try {
     const res = await authFetch('/api/userCredentials');
     if (!res.ok) return null;

@@ -8,7 +8,8 @@ import { ApiException } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EventoPage({ params }: { params: { idOrSlug: string } }) {
+export default async function EventoPage(props: { params: Promise<{ idOrSlug: string }> }) {
+  const params = await props.params;
   let evento;
   try {
     evento = await getEvento(params.idOrSlug);

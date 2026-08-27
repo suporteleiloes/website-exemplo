@@ -5,12 +5,14 @@ import { WIDGET_SLUG } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
+export async function generateMetadata(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const a = await getArtigoServer(WIDGET_SLUG, Number(params.id)).catch(() => null);
   return { title: a ? `${a.titulo} — Central de Ajuda` : 'Central de Ajuda' };
 }
 
-export default async function ArtigoPage({ params }: { params: { id: string } }) {
+export default async function ArtigoPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = Number(params.id);
   if (!Number.isFinite(id)) notFound();
   const artigo = await getArtigoServer(WIDGET_SLUG, id).catch(() => null);

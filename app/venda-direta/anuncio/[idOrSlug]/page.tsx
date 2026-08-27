@@ -9,7 +9,8 @@ import { moeda } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AnuncioPage({ params }: { params: { idOrSlug: string } }) {
+export default async function AnuncioPage(props: { params: Promise<{ idOrSlug: string }> }) {
+  const params = await props.params;
   let anuncio;
   try { anuncio = await getAnuncio(params.idOrSlug); }
   catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }

@@ -7,7 +7,7 @@ import { API_BASE, TENANT, TENANT_HEADER, JWT_COOKIE } from '@/lib/config';
 // SEM expor o token. Endpoints da Website V2 também passam por aqui quando o client
 // precisa de no-cache (ex.: lances-publicos) — basta usar /api/proxy/website/v2/...
 async function handle(req: NextRequest, path: string[]) {
-  const jwt = cookies().get(JWT_COOKIE)?.value;
+  const jwt = (await cookies()).get(JWT_COOKIE)?.value;
   const search = req.nextUrl.search || '';
   const url = `${API_BASE}/api/${path.join('/')}${search}`;
 
@@ -31,8 +31,23 @@ async function handle(req: NextRequest, path: string[]) {
   });
 }
 
-export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) { return handle(req, params.path); }
-export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) { return handle(req, params.path); }
-export async function PUT(req: NextRequest, { params }: { params: { path: string[] } }) { return handle(req, params.path); }
-export async function PATCH(req: NextRequest, { params }: { params: { path: string[] } }) { return handle(req, params.path); }
-export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) { return handle(req, params.path); }
+export async function GET(req: NextRequest, props: { params: Promise<{ path: string[] }> }) {
+  const params = await props.params;
+  return handle(req, params.path);
+}
+export async function POST(req: NextRequest, props: { params: Promise<{ path: string[] }> }) {
+  const params = await props.params;
+  return handle(req, params.path);
+}
+export async function PUT(req: NextRequest, props: { params: Promise<{ path: string[] }> }) {
+  const params = await props.params;
+  return handle(req, params.path);
+}
+export async function PATCH(req: NextRequest, props: { params: Promise<{ path: string[] }> }) {
+  const params = await props.params;
+  return handle(req, params.path);
+}
+export async function DELETE(req: NextRequest, props: { params: Promise<{ path: string[] }> }) {
+  const params = await props.params;
+  return handle(req, params.path);
+}

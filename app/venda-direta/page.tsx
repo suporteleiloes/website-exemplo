@@ -10,7 +10,8 @@ export const metadata = { title: 'Venda direta', description: 'Bens disponíveis
 type SP = Record<string, string | undefined>;
 
 // Vitrine da VENDA DIRETA: eventos recebendo ofertas + anúncios em destaque.
-export default async function VendaDiretaPage({ searchParams }: { searchParams: SP }) {
+export default async function VendaDiretaPage(props: { searchParams: Promise<SP> }) {
+  const searchParams = await props.searchParams;
   const situacao = searchParams.situacao || 'recebendo';
   let eventos: Evento[] = [];
   let destaques: Anuncio[] = [];

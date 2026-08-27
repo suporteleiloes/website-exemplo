@@ -19,7 +19,8 @@ const ICONE: Record<string, string> = {
 function icone(cat: string) { return ICONE[cat] || '📄'; }
 function slugCat(cat: string) { return encodeURIComponent(cat); }
 
-export default async function AjudaPage({ searchParams }: { searchParams: { busca?: string } }) {
+export default async function AjudaPage(props: { searchParams: Promise<{ busca?: string }> }) {
+  const searchParams = await props.searchParams;
   const busca = (searchParams?.busca || '').trim();
   const { colecoes, artigos } = await getAjudaServer(WIDGET_SLUG, busca).catch(() => ({ colecoes: [], artigos: [] }));
 

@@ -29,7 +29,8 @@ function paramsFromSearch(sp: SP) {
   return p;
 }
 
-export default async function LeiloesPage({ searchParams }: { searchParams: SP }) {
+export default async function LeiloesPage(props: { searchParams: Promise<SP> }) {
+  const searchParams = await props.searchParams;
   const params = paramsFromSearch(searchParams);
   const safe = async <T,>(p: Promise<T>, fb: T) => { try { return await p; } catch { return fb; } };
   let data: { result: Leilao[]; total: number; page: number; pages: number } | null = null;

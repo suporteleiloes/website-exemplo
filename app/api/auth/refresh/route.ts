@@ -6,7 +6,7 @@ import { maxAgeFromTimestamp } from '@/lib/cookies';
 // BFF: renova o access token usando o refresh token (P4), mantendo ambos em cookies httpOnly.
 // Chame quando o access expirar (ou ao receber 401). Rotaciona o refresh (uso único).
 export async function POST() {
-  const refresh = cookies().get(REFRESH_COOKIE)?.value;
+  const refresh = (await cookies()).get(REFRESH_COOKIE)?.value;
   if (!refresh) {
     return NextResponse.json({ error: true, message: 'Sem sessão' }, { status: 401 });
   }

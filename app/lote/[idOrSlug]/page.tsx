@@ -21,7 +21,8 @@ export const dynamic = 'force-dynamic';
 const nomeRef = (r: Ref | string | null | undefined): string => !r ? '' : typeof r === 'string' ? r : r.nome || '';
 
 // SEO por lote: título = título do bem, descrição com localização e lance inicial, imagem = 1ª foto.
-export async function generateMetadata({ params }: { params: { idOrSlug: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ idOrSlug: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const lote = await getLote(params.idOrSlug).catch(() => null);
   if (!lote) return { title: 'Lote' };
   const bem = lote.bem;
@@ -33,7 +34,8 @@ export async function generateMetadata({ params }: { params: { idOrSlug: string 
   return pageMeta({ title: titulo, description: desc, path: `/lote/${lote.slug || lote.id}`, image: img });
 }
 
-export default async function LotePage({ params }: { params: { idOrSlug: string } }) {
+export default async function LotePage(props: { params: Promise<{ idOrSlug: string }> }) {
+  const params = await props.params;
   let lote: Lote;
   try { lote = await getLote(params.idOrSlug); }
   catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }

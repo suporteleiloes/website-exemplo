@@ -5,7 +5,8 @@ import type { Filtros } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Mapa de imóveis', description: 'Localização dos imóveis em leilão no mapa.', alternates: { canonical: '/mapa' } };
 
-export default async function MapaPage({ searchParams }: { searchParams: { leilao?: string } }) {
+export default async function MapaPage(props: { searchParams: Promise<{ leilao?: string }> }) {
+  const searchParams = await props.searchParams;
   let filtros: Filtros | null = null;
   try { filtros = await getFiltros(searchParams.leilao ? { leilao: searchParams.leilao } : undefined); } catch { /* segue sem selects */ }
 
