@@ -226,6 +226,7 @@ export interface SiteConfig {
   realtime?: { url: string | null; clientId: string | null };
   // Rodapé editável (aba "Footer" do modal de Site). Lista de leiloeiros + toggles de links.
   footer?: {
+    logo?: string | null;
     leiloeiros?: { nome: string; matricula: string }[];
     colLeiloes?: { mostrar?: boolean; calendario?: boolean; vendaDireta?: boolean; imoveis?: boolean; veiculos?: boolean; realizados?: boolean };
     colParticipante?: { mostrar?: boolean; comoParticipar?: boolean; cadastro?: boolean; duvidas?: boolean; faleConosco?: boolean };

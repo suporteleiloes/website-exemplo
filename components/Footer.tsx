@@ -35,8 +35,9 @@ function duasLinhasEndereco(e: Record<string, string | null> | undefined): { l1:
 // exatamente como o HTML de referência — assim a tela nunca fica "quebrada"/vazia.
 export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig | null; leiloeiros?: Leiloeiro[] }) {
   const nome = MODO_EXEMPLO ? 'Leiloeiro Modelo' : (config?.siteName || 'Leiloeiro Modelo');
-  // Logo do cliente no rodapé (mesma do Header). Sem logo → cai no martelo + nome do template.
-  const logoUrl = MODO_EXEMPLO ? null : (config?.logo?.horizontal || config?.logo?.square || null);
+  // Logo do rodapé: prioriza a logo específica do footer (versão clara p/ fundo escuro),
+  // depois a logo padrão. Sem nenhuma → cai no martelo + nome do template.
+  const logoUrl = MODO_EXEMPLO ? null : (config?.footer?.logo || config?.logo?.horizontal || config?.logo?.square || null);
   const c = config?.contato;
   const redes = config?.redesSociais || {};
 
