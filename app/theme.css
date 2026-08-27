@@ -95,8 +95,8 @@ a.lei-footer__contact:hover span { color: #fff; }
 .lei-footer__bar-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding-top: 20px; padding-bottom: 20px; font-size: 13.5px; color: rgba(255,255,255,.55); }
 .lei-footer__bar-inner > span:first-child { font-size: 13.5px; color: rgba(255,255,255,.55); }
 .lei-footer__bar-inner a:hover { color: #fff; }
-.lei-footer__ssl { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; color: rgba(255,255,255,.62); }
-.lei-footer__ssl svg { color: #4caf7d; flex: none; }
+/* Selo SSL do rodapé — SVG (badge verde), altura fixa como no template. */
+.lei-footer__ssl { display: block; height: 38px; width: auto; flex: none; }
 
 /* ===================== HOME · HERO + BUSCA ===================== */
 .lei-hero { position: relative; background: var(--brand-primary); overflow: hidden; }

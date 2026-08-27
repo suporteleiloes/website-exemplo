@@ -166,10 +166,25 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
       <div className="lei-footer__bar">
         <div className="lei-wrap lei-footer__bar-inner">
           <span>© 2026 {nome} · Todos os direitos reservados.</span>
-          <span className="lei-footer__ssl" aria-label="Site seguro — SSL e monitorado 24h">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>
-            Site seguro — SSL e monitorado 24h
-          </span>
+          {/* Selo SSL (badge verde), no lugar do texto — equivalente ao selo do template. */}
+          <svg className="lei-footer__ssl" width="176" height="40" viewBox="0 0 176 40" fill="none" role="img" aria-label="Site seguro — SSL e monitorado 24h">
+            <defs>
+              <linearGradient id="lei-ssl-g" x1="0" y1="0" x2="0" y2="40" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="#57C24A" />
+                <stop offset="1" stopColor="#3C9A32" />
+              </linearGradient>
+            </defs>
+            {/* pílula verde */}
+            <rect x="20" y="2" width="154" height="36" rx="8" fill="url(#lei-ssl-g)" />
+            {/* disco do escudo à esquerda (sobreposto) */}
+            <circle cx="20" cy="20" r="18" fill="#2E7D26" />
+            <circle cx="20" cy="20" r="18" fill="none" stroke="#ffffff" strokeOpacity=".25" strokeWidth="1" />
+            <path d="M20 8l8 3v6c0 5-3.6 8.2-8 10-4.4-1.8-8-5-8-10v-6l8-3z" fill="#ffffff" />
+            <path d="M16.4 20.2l2.6 2.6 5-5.2" fill="none" stroke="#2E7D26" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            {/* textos */}
+            <text x="46" y="18" fill="#ffffff" fontFamily="inherit" fontSize="12.5" fontWeight="800" letterSpacing=".5">SITE SEGURO</text>
+            <text x="46" y="31" fill="#ffffff" fillOpacity=".92" fontFamily="inherit" fontSize="8.5" fontWeight="600" letterSpacing=".4">SSL E MONITORADO 24H</text>
+          </svg>
           <span style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
             <Link href="/termos" style={{ color: 'rgba(255,255,255,.78)' }}>Termos de uso</Link>
             <Link href="/privacidade" style={{ color: 'rgba(255,255,255,.78)' }}>Política de privacidade</Link>
