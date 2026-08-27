@@ -35,6 +35,8 @@ function duasLinhasEndereco(e: Record<string, string | null> | undefined): { l1:
 // exatamente como o HTML de referência — assim a tela nunca fica "quebrada"/vazia.
 export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig | null; leiloeiros?: Leiloeiro[] }) {
   const nome = MODO_EXEMPLO ? 'Leiloeiro Modelo' : (config?.siteName || 'Leiloeiro Modelo');
+  // Logo do cliente no rodapé (mesma do Header). Sem logo → cai no martelo + nome do template.
+  const logoUrl = MODO_EXEMPLO ? null : (config?.logo?.horizontal || config?.logo?.square || null);
   const c = config?.contato;
   const redes = config?.redesSociais || {};
 
@@ -99,10 +101,17 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
         {/* marca + leiloeiros + social */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <span className="lei-logo__mark" style={{ background: 'var(--color-danger)', width: 46, height: 46, borderRadius: 10 }}>
-              <Gavel />
-            </span>
-            <span className="lei-footer__brand-name">{nome}</span>
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={nome} className="lei-footer__logo" style={{ height: 46, width: 'auto', maxWidth: 230, objectFit: 'contain' }} />
+            ) : (
+              <>
+                <span className="lei-logo__mark" style={{ background: 'var(--color-danger)', width: 46, height: 46, borderRadius: 10 }}>
+                  <Gavel />
+                </span>
+                <span className="lei-footer__brand-name">{nome}</span>
+              </>
+            )}
           </div>
           <div style={{ marginBottom: 22, maxWidth: 270 }}>
             <div className="lei-footer__label">Leiloeiros Oficiais</div>
