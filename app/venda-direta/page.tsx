@@ -5,6 +5,7 @@ import { Vazio, Erro } from '@/components/Estados';
 import { getEventos, getAnuncios, type Evento, type Anuncio } from '@/lib/vd';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Venda direta', description: 'Bens disponíveis para compra por proposta, fora do leilão.', alternates: { canonical: '/venda-direta' } };
 
 type SP = Record<string, string | undefined>;
 

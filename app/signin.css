@@ -1,0 +1,106 @@
+/* ============================================================================
+   Login — redesign 2 colunas (aside navy + form claro), portado do kleiloes-v2
+   e re-tematizado para a identidade do template (navy/dourado).
+   Escopo: tudo sob .lei-signin. Fontes Sora/Karla via <link> na própria página.
+   ============================================================================ */
+body:has(.lei-signin) .lei-footer,
+body:has(.lei-signin) .lei-wa { display: none !important; }
+/* fundo creme em toda a área da tela de login (evita a faixa branca do <html> embaixo em
+   qualquer altura de header/viewport). body preenche 100dvh pra não sobrar nada branco. */
+html:has(.lei-signin) { background: #f5f4f0; }
+body:has(.lei-signin), body:has(.lei-signin) main { background: #f5f4f0; }
+body:has(.lei-signin) { min-height: 100dvh; }
+
+.lei-signin {
+  --sd: #0d1526;            /* navy escuro   */
+  --sp: #14213d;            /* navy primário */
+  --sp-hover: #0d1526;
+  --cream: #f5f4f0;
+  --gold: #d9b96c;
+  --gold-soft: #e8ce8f;
+  --line: #e4e0d6;
+  --ink: #14213d;
+  --ink-soft: #3a4256;
+  --muted: #5a6270;
+  --muted-2: #8a8f99;
+
+  min-height: calc(100dvh - 74px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  background: var(--cream);
+  color: var(--ink);
+}
+
+/* ---------- ASIDE (coluna navy) ---------- */
+.lei-signin__aside {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(1100px 420px at 18% -12%, rgba(255,255,255,.06), transparent 60%),
+    radial-gradient(900px 520px at 102% -8%, rgba(217,185,108,.20), transparent 55%),
+    linear-gradient(140deg, #0b1428 0%, #14213d 55%, #1c2b4d 100%);
+  color: #f5f4f0;
+  padding: 48px 56px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.lei-signin__aside > * { position: relative; }
+.lei-signin__brand { display: inline-flex; align-items: center; gap: 12px; }
+.lei-signin__brand-mark { width: 46px; height: 46px; border-radius: 12px; background: rgba(255,255,255,.08); display: grid; place-items: center; flex: none; }
+.lei-signin__brand-name { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -.01em; }
+.lei-signin__brand-sub { display: block; font-size: 10px; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; color: var(--gold-soft); margin-top: 2px; }
+
+.lei-signin__grow { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+.lei-signin__pill { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 7px 15px; border: 1px solid rgba(217,185,108,.5); border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-soft); }
+.lei-signin__pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+.lei-signin__headline { margin: 0; font-family: Sora, sans-serif; font-weight: 600; font-size: 44px; line-height: 1.08; letter-spacing: -.025em; text-wrap: balance; }
+.lei-signin__lead { margin: 0; max-width: 32ch; font-size: 15.5px; line-height: 1.6; color: rgba(245,244,240,.72); }
+.lei-signin__stats { display: flex; gap: 34px; border-top: 1px solid rgba(245,244,240,.14); padding-top: 22px; }
+.lei-signin__stat-n { font-family: Sora, sans-serif; font-size: 26px; font-weight: 700; color: var(--gold); }
+.lei-signin__stat-l { font-size: 12px; color: rgba(245,244,240,.62); margin-top: 4px; }
+.lei-signin__foot { font-size: 12.5px; color: rgba(245,244,240,.5); }
+
+/* ---------- MAIN (coluna clara / form) ---------- */
+.lei-signin__main { display: flex; flex-direction: column; padding: 30px 6vw 40px; }
+.lei-signin__form { width: 100%; max-width: 440px; margin: auto; display: flex; flex-direction: column; gap: 22px; }
+.lei-signin__title { margin: 0; font-family: Sora, sans-serif; font-weight: 600; font-size: 34px; letter-spacing: -.025em; color: var(--sd); }
+.lei-signin__desc { margin: -8px 0 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
+
+.lei-signin__field { display: flex; flex-direction: column; gap: 8px; }
+.lei-signin__lbl { display: flex; align-items: center; gap: 5px; font-size: 13.5px; font-weight: 600; color: var(--ink-soft); }
+.lei-signin__lbl a { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--brand-accent-ink); text-decoration: none; }
+.lei-signin__lbl a:hover { text-decoration: underline; }
+.lei-signin__inwrap { position: relative; display: flex; align-items: center; }
+.lei-signin__inico { position: absolute; left: 15px; color: var(--muted-2); display: grid; place-items: center; pointer-events: none; }
+.lei-signin__input { flex: 1; width: 100%; height: 52px; padding: 0 16px 0 44px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: 15.5px; color: var(--ink); outline: none; transition: border-color .12s, box-shadow .12s; }
+.lei-signin__input:focus { border-color: var(--sp); box-shadow: 0 0 0 3px rgba(20,33,61,.12); }
+.lei-signin__input::placeholder { color: #b0aca2; }
+.lei-signin__toggle { position: absolute; right: 8px; width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: var(--muted-2); cursor: pointer; transition: background .12s, color .12s; }
+.lei-signin__toggle:hover { background: #eef0f3; color: var(--sp); }
+.lei-signin__check { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-soft); cursor: pointer; }
+.lei-signin__check input { width: 17px; height: 17px; accent-color: var(--sp); margin: 0; }
+
+.lei-signin__submit { height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 12px; background: var(--sp); color: #fff; font-family: Sora, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 10px 24px rgba(20,33,61,.22); transition: background .12s, box-shadow .12s, transform .12s; }
+.lei-signin__submit:hover { background: var(--sp-hover); box-shadow: 0 14px 30px rgba(20,33,61,.28); }
+.lei-signin__submit:active { transform: translateY(1px); }
+.lei-signin__submit:disabled { opacity: .6; cursor: default; box-shadow: none; }
+
+.lei-signin__alt { font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+.lei-signin__alt a { color: var(--brand-accent-ink); font-weight: 700; text-decoration: none; }
+.lei-signin__alt a:hover { text-decoration: underline; }
+.lei-signin__msg { border-radius: 10px; padding: 11px 14px; font-size: 14px; }
+.lei-signin__msg--erro { background: #fff1f1; color: var(--color-danger); }
+.lei-signin__hr { border: 0; border-top: 1px solid var(--line); margin: 2px 0; }
+.lei-signin__secure { display: flex; align-items: flex-start; gap: 9px; font-size: 12.5px; color: var(--muted); }
+.lei-signin__secure svg { flex: none; color: var(--muted-2); margin-top: 1px; }
+
+@media (max-width: 900px) {
+  .lei-signin { grid-template-columns: 1fr; }
+  .lei-signin__aside { display: none; }
+  .lei-signin__main { padding: 22px 20px 36px; }
+  .lei-signin__form { margin: 20px auto; }
+  .lei-signin__title { font-size: 28px; }
+}
+
+.lei-signin__brand-name { font-family: 'Sora', sans-serif; }

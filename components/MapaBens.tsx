@@ -23,10 +23,10 @@ function loadLeaflet(): Promise<any> {
   return leafletPromise;
 }
 
-interface Props { ufs: FacetItem[]; cidades: FacetItem[] }
+interface Props { ufs: FacetItem[]; cidades: FacetItem[]; leilao?: string }
 
 // Mapa de bens georreferenciado (Website V2 /mapa) com filtros UF + cidade.
-export default function MapaBens({ ufs, cidades }: Props) {
+export default function MapaBens({ ufs, cidades, leilao }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
@@ -41,6 +41,7 @@ export default function MapaBens({ ufs, cidades }: Props) {
       const qs = new URLSearchParams();
       if (uf) qs.set('uf', uf);
       if (cidade) qs.set('cidade', cidade);
+      if (leilao) qs.set('leilao', leilao);
       const r = await fetch(`/api/proxy/website/v2/mapa?${qs.toString()}`, { cache: 'no-store' });
       const d = await r.json().catch(() => ({ result: [] }));
       const pins: MapaPin[] = Array.isArray(d?.result) ? d.result : [];
@@ -69,7 +70,7 @@ export default function MapaBens({ ufs, cidades }: Props) {
     } finally {
       setCarregando(false);
     }
-  }, [uf, cidade]);
+  }, [uf, cidade, leilao]);
 
   // init do mapa (1x)
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function MapaBens({ ufs, cidades }: Props) {
   useEffect(() => {
     if (mapRef.current && (window as any).L) carregarPins((window as any).L);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uf, cidade]);
+  }, [uf, cidade, leilao]);
 
   return (
     <div>

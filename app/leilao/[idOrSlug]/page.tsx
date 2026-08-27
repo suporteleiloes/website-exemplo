@@ -1,20 +1,49 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import FiltrosLotes from '@/components/FiltrosLotes';
+import { notFound, redirect } from 'next/navigation';
+import FiltroBarLote from '@/components/FiltroBarLote';
 import LoteCard from '@/components/LoteCard';
 import Paginacao from '@/components/Paginacao';
-import HabilitacaoBtn from '@/components/HabilitacaoBtn';
-import { BadgeLeilao } from '@/components/Badge';
-import { Vazio } from '@/components/Estados';
-import { getLeilao, getLotes, getFiltros } from '@/lib/api';
-import { ApiException } from '@/lib/api';
+import { getLeilao, getLotes, getFiltros, getLeilaoDocumentos, ApiException } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
-import { dataHora, TIPO_LEILAO, leilaoPermiteLance } from '@/lib/format';
-import type { Filtros, Leilao, Lote } from '@/lib/types';
+import { TIPO_LEILAO, textoLocal } from '@/lib/format';
+import { urlImagem, fotoLeilao } from '@/lib/img';
+import { pageMeta } from '@/lib/seo';
+import type { Metadata } from 'next';
+import type { Filtros, Leilao, Lote, Imagem } from '@/lib/types';
+
+// SEO por leilão: título = título do leilão; descrição com nº de lotes e modalidade.
+export async function generateMetadata({ params }: { params: { idOrSlug: string } }): Promise<Metadata> {
+  const leilao = await getLeilao(params.idOrSlug).catch(() => null);
+  if (!leilao) return { title: 'Leilão' };
+  const cod = leilao.codigo || (leilao.numero ? `${leilao.numero}${leilao.ano ? '/' + leilao.ano : ''}` : '');
+  const titulo = leilao.titulo || `Leilão ${cod}`;
+  const nat = leilao.vendaDireta ? 'Venda direta' : leilao.judicial ? 'Leilão judicial' : 'Leilão extrajudicial';
+  const desc = `${nat}${cod ? ` nº ${cod}` : ''}${leilao.totalLotes ? ` · ${leilao.totalLotes} lotes` : ''}. ${leilao.descricao || 'Participe online.'}`.trim();
+  return pageMeta({ title: titulo, description: desc.slice(0, 300), path: `/leilao/${leilao.slug || leilao.id}`, image: fotoLeilao(leilao) });
+}
+
+type Aba = 'lotes' | 'documentos' | 'comitentes';
+interface DocItem { nome?: string | null; tipo?: { nome?: string | null } | string | null; url?: string | null; info?: string | null }
+
+// Iniciais do comitente pro "avatar" (ex.: "Banco do Brasil" → "BB").
+function siglaDe(nome: string): string {
+  const p = nome.trim().split(/\s+/).filter((w) => w.length > 2);
+  return (p.slice(0, 2).map((w) => w[0]).join('') || nome.slice(0, 2)).toUpperCase();
+}
 
 export const dynamic = 'force-dynamic';
 
 type SP = Record<string, string | undefined>;
+
+// "12/09 · 14h00"
+function dataCurta(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const dm = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  const hm = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+  return `${dm} · ${hm}`;
+}
 
 export default async function LeilaoPage({ params, searchParams }: { params: { idOrSlug: string }; searchParams: SP }) {
   let leilao: Leilao;
@@ -22,20 +51,36 @@ export default async function LeilaoPage({ params, searchParams }: { params: { i
   catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }
 
   const loteParams: Record<string, string | number | undefined> = {
-    leilao: leilao.id, limit: 12, page: searchParams.page ? Number(searchParams.page) : 1,
+    leilao: leilao.id, limit: 24, page: searchParams.page ? Number(searchParams.page) : 1,
     search: searchParams.search, categoria: searchParams.categoria, subcategoria: searchParams.subcategoria,
-    uf: searchParams.uf, cidade: searchParams.cidade, comitente: searchParams.comitente,
-    valorMinimo: searchParams.valorMinimo, valorMaximo: searchParams.valorMaximo, sortBy: searchParams.sortBy || 'numero',
+    uf: searchParams.uf, cidade: searchParams.cidade, comitente: searchParams.comitente, status: searchParams.status,
+    valorMinimo: searchParams.valorMinimo, valorMaximo: searchParams.valorMaximo, sortBy: searchParams.sortBy || 'numero', order: 'asc',
   };
 
   const safe = async <T,>(p: Promise<T>, fb: T) => { try { return await p; } catch { return fb; } };
-  const empty = { result: [], total: 0, page: 1, limit: 12, pages: 0 };
+  const empty = { result: [], total: 0, page: 1, limit: 24, pages: 0 };
   const [lotes, filtros, user] = await Promise.all([
     safe(getLotes(loteParams), empty as any),
     safe(getFiltros({ leilao: leilao.id }), { categorias: [], subcategorias: [], ufs: [], cidades: [], bairros: [], comitentes: [] } as Filtros),
     getSessionUser().catch(() => null),
   ]);
   const lista: Lote[] = lotes.result;
+
+  // Leilão com um ÚNICO lote (e sem filtros/aba) abre direto a página do lote (regra do kleiloes).
+  const semFiltro = !searchParams.aba && !searchParams.page && !searchParams.search && !searchParams.categoria
+    && !searchParams.status && !searchParams.uf && !searchParams.cidade && !searchParams.comitente
+    && !searchParams.valorMinimo && !searchParams.valorMaximo;
+  if (lotes.total === 1 && lista[0] && semFiltro) {
+    redirect(`/lote/${lista[0].slug || lista[0].id}`);
+  }
+
+  const aba: Aba = searchParams.aba === 'documentos' ? 'documentos' : searchParams.aba === 'comitentes' ? 'comitentes' : 'lotes';
+  const comitentes = leilao.comitentes || [];
+  const edital = leilao._urls?.edital || null;
+  // Documentos só são buscados quando a aba está aberta (evita fetch extra na aba Lotes).
+  const docs: DocItem[] = aba === 'documentos'
+    ? ((await safe(getLeilaoDocumentos(leilao.id), { result: [], total: 0 })).result as DocItem[])
+    : [];
 
   const makeHref = (pg: number) => {
     const q = new URLSearchParams();
@@ -46,87 +91,139 @@ export default async function LeilaoPage({ params, searchParams }: { params: { i
 
   const tipo = leilao.tipo ? TIPO_LEILAO[leilao.tipo] : leilao.tipoLabel;
   const datas = [leilao.data1, leilao.data2, leilao.data3].filter(Boolean) as string[];
+  const codigo = leilao.codigo || (leilao.numero ? `${leilao.numero}${leilao.ano ? '/' + leilao.ano : ''}` : String(leilao.id));
+  const pracaLabel = leilao.praca ? `${leilao.praca}º Leilão` : null;
+  const auditorio = leilao._urls?.auditorio;
+  const temImovel = lista.some((l) => l.bem?.isImovel);
+  const local = textoLocal(leilao.local) || (tipo === 'Online' ? '100% Online' : tipo || '');
 
   return (
-    <div className="container-page">
-      {/* Cabeçalho */}
-      <div className="rounded-lg border border-gray-200 bg-white p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <BadgeLeilao status={leilao.status} label={leilao.statusLabel} />
-          {leilao.judicial && <span className="badge bg-marca-2 text-white">Judicial</span>}
-          {leilao.vendaDireta && <span className="badge bg-destaque text-white">Venda direta</span>}
-          {tipo && <span className="badge bg-gray-100 text-gray-700">{tipo}</span>}
-        </div>
-        <h1 className="mt-2 text-2xl font-bold text-gray-800">{leilao.titulo}</h1>
-        {leilao.descricao && <p className="mt-2 whitespace-pre-line text-sm text-gray-600">{leilao.descricao}</p>}
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <p className="text-xs font-semibold uppercase text-gray-400">Datas dos pregões</p>
-            {datas.length ? datas.map((d, i) => <p key={i} className="text-sm text-gray-700">{i + 1}ª praça: {dataHora(d)}</p>) : <p className="text-sm text-gray-500">—</p>}
+    <main>
+      {/* Hero navy */}
+      <section className="lei-ev-hero">
+        <div className="lei-ev-hero__in">
+          <div className="lei-ev-hero__crumb">
+            <Link href="/">Início</Link> › <Link href="/leiloes">Leilões</Link> › Leilão {codigo}
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-gray-400">Local / modalidade</p>
-            <p className="text-sm text-gray-700">{leilao.local || (tipo === 'Online' ? '100% Online' : tipo || '—')}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-gray-400">Leiloeiro</p>
-            <p className="text-sm text-gray-700">{leilao.leiloeiro?.nome || '—'}</p>
-            {leilao.leiloeiro?.matricula && <p className="text-xs text-gray-500">{leilao.leiloeiro.matricula}</p>}
-          </div>
-        </div>
-
-        {(leilao.infoVisitacao || leilao.infoPagamento || leilao.infoRetirada) && (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {leilao.infoVisitacao && <Info titulo="Visitação" texto={leilao.infoVisitacao} />}
-            {leilao.infoPagamento && <Info titulo="Pagamento" texto={leilao.infoPagamento} />}
-            {leilao.infoRetirada && <Info titulo="Retirada" texto={leilao.infoRetirada} />}
-          </div>
-        )}
-
-        {leilao.comitentes && leilao.comitentes.length > 0 && (
-          <p className="mt-4 text-sm text-gray-600"><span className="font-semibold">Comitente(s):</span> {leilao.comitentes.map((c) => c.nome).join(', ')}</p>
-        )}
-
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          {leilao._urls?.edital && <a href={leilao._urls.edital} target="_blank" className="btn-outline">📄 Edital</a>}
-          {leilao._urls?.auditorio && <a href={leilao._urls.auditorio} target="_blank" className="btn-outline">▶ Auditório ao vivo</a>}
-        </div>
-
-        {/* Habilitação */}
-        <div className="mt-5 max-w-md rounded-lg bg-gray-50 p-4">
-          <p className="mb-2 text-sm font-semibold text-gray-700">Participar deste leilão</p>
-          <HabilitacaoBtn leilaoId={leilao.id} logado={!!user} />
-        </div>
-      </div>
-
-      {/* Lotes */}
-      <h2 className="mb-3 mt-8 text-xl font-bold text-gray-800">Lotes {leilao.totalLotes != null ? `(${leilao.totalLotes})` : ''}</h2>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
-        <aside><FiltrosLotes filtros={filtros} /></aside>
-        <div>
-          {lista.length === 0 ? (
-            <Vazio titulo="Nenhum lote encontrado" descricao="Ajuste os filtros." />
-          ) : (
-            <>
-              <p className="mb-3 text-sm text-gray-500">{lotes.total} lote(s)</p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {lista.map((lt) => <LoteCard key={lt.id} lote={lt} />)}
+          <div className="lei-ev-hero__row">
+            <div className="lei-ev-hero__main">
+              <div className="lei-ev-hero__badges">
+                {pracaLabel && <span className="lei-ev-hero__praca">{pracaLabel}</span>}
+                {leilao.judicial && <span className="lei-ev-hero__tag">Judicial</span>}
+                {leilao.vendaDireta && <span className="lei-ev-hero__tag">Venda Direta</span>}
+                {tipo && <span className="lei-ev-hero__tag">{tipo}</span>}
               </div>
-              <Paginacao page={lotes.page} pages={lotes.pages} makeHref={makeHref} />
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+              <h1 className="lei-ev-hero__title">{leilao.titulo || `Leilão ${codigo}`}</h1>
+              <div className="lei-ev-hero__meta">
+                <span>Leilão nº {codigo}</span>
+                {datas.map((d, i) => (
+                  <span key={i}><b>{i + 1}º leilão</b> {dataCurta(d)}</span>
+                ))}
+                {local && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-accent)" strokeWidth="2" style={{ flex: 'none' }}><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
+                    {local}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="lei-ev-hero__acts">
+              {!user && (
+                <Link href="/login" className="lei-ev-hero__cta">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+                  Faça login para se habilitar
+                </Link>
+              )}
+              {auditorio && (
+                <a href={auditorio} target="_blank" rel="noopener" className="lei-ev-hero__aud">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-accent)" strokeWidth="1.9" strokeLinecap="round"><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" /></svg>
+                  Acesse o Auditório Virtual
+                </a>
+              )}
+            </div>
+          </div>
 
-function Info({ titulo, texto }: { titulo: string; texto: string }) {
-  return (
-    <div className="rounded bg-gray-50 p-3">
-      <p className="text-xs font-semibold uppercase text-gray-400">{titulo}</p>
-      <p className="whitespace-pre-line text-sm text-gray-700">{texto}</p>
-    </div>
+          {/* abas */}
+          <div className="lei-ev-tabs">
+            <Link href={`/leilao/${params.idOrSlug}`} className={`lei-ev-tab${aba === 'lotes' ? ' is-active' : ''}`}>Lotes</Link>
+            <Link href={`/leilao/${params.idOrSlug}?aba=documentos`} className={`lei-ev-tab${aba === 'documentos' ? ' is-active' : ''}`}>Documentos</Link>
+            <Link href={`/leilao/${params.idOrSlug}?aba=comitentes`} className={`lei-ev-tab${aba === 'comitentes' ? ' is-active' : ''}`}>Comitentes</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Corpo — muda conforme a aba (Lotes / Documentos / Comitentes) */}
+      <section className="lei-ev-body">
+        {aba === 'documentos' ? (
+          <div className="lei-ev-panel">
+            <h2 className="lei-ev-panel__h2">Documentos do leilão</h2>
+            {(edital || docs.length > 0) ? (
+              <div className="lei-ev-docs">
+                {edital && (
+                  <a href={edital} target="_blank" rel="noopener noreferrer" className="lei-ev-doc">
+                    <span className="lei-ev-doc__ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a8874b" strokeWidth="1.9"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg></span>
+                    <span className="lei-ev-doc__txt"><b>Edital do leilão</b><small>PDF · abrir</small></span>
+                  </a>
+                )}
+                {docs.map((d, i) => {
+                  const nome = d.nome || (typeof d.tipo === 'string' ? d.tipo : d.tipo?.nome) || 'Documento';
+                  return d.url ? (
+                    <a key={i} href={d.url} target="_blank" rel="noopener noreferrer" className="lei-ev-doc">
+                      <span className="lei-ev-doc__ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a8874b" strokeWidth="1.9"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg></span>
+                      <span className="lei-ev-doc__txt"><b style={{ textTransform: 'capitalize' }}>{nome}</b>{d.info && <small>{d.info}</small>}</span>
+                    </a>
+                  ) : null;
+                })}
+              </div>
+            ) : (
+              <p className="lei-ev-panel__vazio">Nenhum documento disponível para este leilão.</p>
+            )}
+          </div>
+        ) : aba === 'comitentes' ? (
+          comitentes.length > 0 ? (
+            <div className="lei-ev-comits">
+              {comitentes.map((c) => {
+                const logo = urlImagem(c.image as Imagem | string | null, 'full') || urlImagem(c.image as Imagem | string | null, 'thumb');
+                return (
+                  <div key={c.id ?? c.nome} className="lei-ev-comit-card">
+                    <div className={`lei-ev-comit-card__ava${logo ? ' has-logo' : ''}`}>
+                      {logo
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={logo} alt={c.nome || 'Comitente'} />
+                        : siglaDe(c.nome || 'Comitente')}
+                    </div>
+                    <div className="lei-ev-comit-card__nome">{c.nome}</div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="lei-ev-panel"><p className="lei-ev-panel__vazio">Nenhum comitente informado para este leilão.</p></div>
+          )
+        ) : (
+          <>
+            <FiltroBarLote filtros={filtros} total={lotes.total} totalGeral={leilao.totalLotes ?? lotes.total} />
+
+            {lista.length === 0 ? (
+              <div className="lei-empty">
+                <div className="lei-empty__ico">
+                  <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#A8874B" strokeWidth="1.7"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4-4" /></svg>
+                </div>
+                <h3>Nenhum lote com esses filtros</h3>
+                <p>Remova a situação ou o tipo de bem selecionado para ver mais resultados deste leilão.</p>
+                <Link href={`/leilao/${params.idOrSlug}`} className="lei-btn lei-btn--primary" style={{ borderRadius: 999, padding: '14px 30px' }}>Limpar filtros</Link>
+              </div>
+            ) : (
+              <>
+                <div id="loteGrid" className="lei-ev-cards">
+                  {lista.map((lt) => <LoteCard key={lt.id} lote={lt} />)}
+                </div>
+                <Paginacao page={lotes.page} pages={lotes.pages} makeHref={makeHref} />
+              </>
+            )}
+          </>
+        )}
+      </section>
+    </main>
   );
 }

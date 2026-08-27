@@ -8,7 +8,8 @@ interface VersaoCadastro { versao?: number; permitirEstrangeiros?: boolean; bloq
 // POST /api/public/arrematantes/cadastro (V1). Sucesso devolve JWT e já loga.
 export default function CadastroForm({ versao }: { versao: VersaoCadastro | null }) {
   const router = useRouter();
-  const podePj = !versao?.bloquearCadPj;
+  // A API devolve flags como STRING ("0"/"1"). `!"0"` é false em JS — trate explicitamente.
+  const podePj = !(versao?.bloquearCadPj === true || String(versao?.bloquearCadPj) === '1');
   const [tipo, setTipo] = useState<1 | 2>(1); // 1=PF, 2=PJ
   const [f, setF] = useState({
     name: '', document: '', email: '', telefone: '', birthDate: '', gender: '', apelido: '', password: '', password2: '',
@@ -20,16 +21,11 @@ export default function CadastroForm({ versao }: { versao: VersaoCadastro | null
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }));
   const soDig = (v: string) => v.replace(/\D/g, '');
 
-  // A API V1 pode devolver message como string OU objeto aninhado de erros de form
-  // (ex.: { pessoa: { gender: ["Informe gênero"] } }). Extrai a 1ª string legível.
   function primeiraMsg(m: unknown): string {
     if (typeof m === 'string') return m;
     if (Array.isArray(m)) return m.length ? primeiraMsg(m[0]) : '';
     if (m && typeof m === 'object') {
-      for (const v of Object.values(m as Record<string, unknown>)) {
-        const s = primeiraMsg(v);
-        if (s) return s;
-      }
+      for (const v of Object.values(m as Record<string, unknown>)) { const s = primeiraMsg(v); if (s) return s; }
     }
     return '';
   }
@@ -81,76 +77,85 @@ export default function CadastroForm({ versao }: { versao: VersaoCadastro | null
     }
   }
 
+  const req = <span className="lei-req">*</span>;
+
   return (
-    <form onSubmit={enviar} className="space-y-5">
-      {/* Tipo */}
-      <div className="flex gap-2 rounded-lg bg-gray-100 p-1 text-sm">
-        <button type="button" onClick={() => setTipo(1)} className={`flex-1 rounded-md px-3 py-1.5 font-medium ${tipo === 1 ? 'bg-white text-marca shadow-sm' : 'text-gray-500'}`}>Pessoa Física</button>
-        {podePj && <button type="button" onClick={() => setTipo(2)} className={`flex-1 rounded-md px-3 py-1.5 font-medium ${tipo === 2 ? 'bg-white text-marca shadow-sm' : 'text-gray-500'}`}>Pessoa Jurídica</button>}
+    <form onSubmit={enviar}>
+      {/* tipo de pessoa */}
+      <div className="lei-cad-tabs">
+        <button type="button" onClick={() => setTipo(1)} className={`lei-cad-tab${tipo === 1 ? ' is-active' : ''}`}>Pessoa Física</button>
+        {podePj && <button type="button" onClick={() => setTipo(2)} className={`lei-cad-tab${tipo === 2 ? ' is-active' : ''}`}>Pessoa Jurídica</button>}
       </div>
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">Dados {tipo === 1 ? 'pessoais' : 'da empresa'}</h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="label">{tipo === 1 ? 'Nome completo' : 'Razão social'} *</label>
-            <input className="input" value={f.name} onChange={(e) => set('name', e.target.value)} required />
-          </div>
-          <div>
-            <label className="label">{tipo === 1 ? 'CPF' : 'CNPJ'} *</label>
-            <input className="input" value={f.document} onChange={(e) => set('document', e.target.value)} inputMode="numeric" required />
-          </div>
-          {tipo === 1 && (
-            <div>
-              <label className="label">Data de nascimento</label>
-              <input type="date" className="input" value={f.birthDate} onChange={(e) => set('birthDate', e.target.value)} />
-            </div>
-          )}
-          {tipo === 1 && (
-            <div>
-              <label className="label">Gênero *</label>
-              <select className="input" value={f.gender} onChange={(e) => set('gender', e.target.value)} required>
-                <option value="">Selecione</option>
-                <option value="1">Masculino</option>
-                <option value="2">Feminino</option>
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="label">E-mail *</label>
-            <input type="email" className="input" value={f.email} onChange={(e) => set('email', e.target.value)} required />
-          </div>
-          <div>
-            <label className="label">Telefone / WhatsApp</label>
-            <input className="input" value={f.telefone} onChange={(e) => set('telefone', e.target.value)} placeholder="(11) 99999-0000" />
-          </div>
+      {/* dados */}
+      <div className="lei-cad-flds">
+        <div className="lei-field" style={{ gridColumn: '1/-1' }}>
+          <label>{tipo === 1 ? 'Nome completo' : 'Razão social'} {req}</label>
+          <input value={f.name} onChange={(e) => set('name', e.target.value)} required />
         </div>
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">Endereço</h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-6">
-          <div className="sm:col-span-2"><label className="label">CEP</label><input className="input" value={f.cep} onChange={(e) => set('cep', e.target.value)} inputMode="numeric" /></div>
-          <div className="sm:col-span-4"><label className="label">Logradouro</label><input className="input" value={f.address} onChange={(e) => set('address', e.target.value)} /></div>
-          <div className="sm:col-span-1"><label className="label">Número</label><input className="input" value={f.number} onChange={(e) => set('number', e.target.value)} /></div>
-          <div className="sm:col-span-2"><label className="label">Bairro</label><input className="input" value={f.district} onChange={(e) => set('district', e.target.value)} /></div>
-          <div className="sm:col-span-2"><label className="label">Cidade</label><input className="input" value={f.city} onChange={(e) => set('city', e.target.value)} /></div>
-          <div className="sm:col-span-1"><label className="label">UF</label><input className="input" maxLength={2} value={f.state} onChange={(e) => set('state', e.target.value.toUpperCase())} /></div>
+        <div className="lei-field">
+          <label>{tipo === 1 ? 'CPF' : 'CNPJ'} {req}</label>
+          <input value={f.document} onChange={(e) => set('document', e.target.value)} inputMode="numeric" placeholder={tipo === 1 ? '000.000.000-00' : '00.000.000/0000-00'} required />
         </div>
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">Acesso</h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div><label className="label">Apelido (opcional)</label><input className="input" value={f.apelido} onChange={(e) => set('apelido', e.target.value)} placeholder="gerado automaticamente" /></div>
-          <div><label className="label">Senha *</label><input type="password" className="input" value={f.password} onChange={(e) => set('password', e.target.value)} required /></div>
-          <div><label className="label">Confirmar senha *</label><input type="password" className="input" value={f.password2} onChange={(e) => set('password2', e.target.value)} required /></div>
+        {tipo === 1 && (
+          <div className="lei-field">
+            <label>Data de nascimento</label>
+            <input type="date" value={f.birthDate} onChange={(e) => set('birthDate', e.target.value)} />
+          </div>
+        )}
+        {tipo === 1 && (
+          <div className="lei-field">
+            <label>Gênero {req}</label>
+            <select value={f.gender} onChange={(e) => set('gender', e.target.value)} required>
+              <option value="">Selecione</option><option value="1">Masculino</option><option value="2">Feminino</option>
+            </select>
+          </div>
+        )}
+        <div className="lei-field">
+          <label>E-mail {req}</label>
+          <input type="email" value={f.email} onChange={(e) => set('email', e.target.value)} required />
         </div>
-      </section>
+        <div className="lei-field">
+          <label>Telefone / WhatsApp</label>
+          <input value={f.telefone} onChange={(e) => set('telefone', e.target.value)} placeholder="(11) 99999-0000" />
+        </div>
+      </div>
 
-      {erro && <p className="rounded bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
-      <button type="submit" className="btn-primary w-full" disabled={enviando}>{enviando ? 'Enviando…' : 'Criar conta'}</button>
-      <p className="text-center text-xs text-gray-400">Ao se cadastrar você poderá habilitar-se em leilões e participar de venda direta.</p>
+      {/* endereço */}
+      <div className="lei-cad-lbl" style={{ marginTop: 24 }}>Endereço</div>
+      <div className="lei-cad-flds">
+        <div className="lei-field"><label>CEP</label><input value={f.cep} onChange={(e) => set('cep', e.target.value)} inputMode="numeric" placeholder="00000-000" /></div>
+        <div className="lei-field" style={{ gridColumn: 'span 2' }}><label>Logradouro</label><input value={f.address} onChange={(e) => set('address', e.target.value)} /></div>
+        <div className="lei-field"><label>Número</label><input value={f.number} onChange={(e) => set('number', e.target.value)} /></div>
+        <div className="lei-field"><label>Bairro</label><input value={f.district} onChange={(e) => set('district', e.target.value)} /></div>
+        <div className="lei-field"><label>Cidade</label><input value={f.city} onChange={(e) => set('city', e.target.value)} /></div>
+        <div className="lei-field"><label>UF</label><input maxLength={2} value={f.state} onChange={(e) => set('state', e.target.value.toUpperCase())} /></div>
+      </div>
+
+      <div className="lei-cad-divider" />
+      <div className="lei-cad-lbl">Acesso</div>
+      <div className="lei-cad-flds">
+        <div className="lei-field"><label>Apelido (opcional)</label><input value={f.apelido} onChange={(e) => set('apelido', e.target.value)} placeholder="gerado automaticamente" /></div>
+        <div className="lei-field"><label>Senha {req}</label><input type="password" value={f.password} onChange={(e) => set('password', e.target.value)} placeholder="Mínimo de 8 caracteres" required /></div>
+        <div className="lei-field"><label>Confirmar senha {req}</label><input type="password" value={f.password2} onChange={(e) => set('password2', e.target.value)} placeholder="Repita a senha" required /></div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 }}>
+        <label className="lei-check" style={{ alignItems: 'flex-start', lineHeight: 1.6 }}>
+          <input type="checkbox" required style={{ marginTop: 2 }} />
+          <span>Li e aceito os <a href="/termos" style={{ fontWeight: 700, color: 'var(--brand-accent-ink)' }}>termos de uso</a> e a <a href="/privacidade" style={{ fontWeight: 700, color: 'var(--brand-accent-ink)' }}>política de privacidade</a>.</span>
+        </label>
+        <label className="lei-check" style={{ alignItems: 'flex-start', lineHeight: 1.6 }}>
+          <input type="checkbox" defaultChecked style={{ marginTop: 2 }} />
+          <span>Quero receber avisos de novos leilões por e-mail e WhatsApp.</span>
+        </label>
+      </div>
+
+      {erro && <p className="lei-auth__err">{erro}</p>}
+      <button type="submit" className="lei-auth__submit" disabled={enviando}>{enviando ? 'Enviando…' : 'Criar conta'}</button>
+      <div style={{ textAlign: 'center', marginTop: 15, fontSize: 13.5, color: '#5a6270' }}>
+        Já tem conta? <a href="/login" style={{ fontWeight: 700, color: 'var(--brand-accent-ink)' }}>Entrar</a>
+      </div>
     </form>
   );
 }

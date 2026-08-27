@@ -43,7 +43,9 @@ export interface Localizacao {
   cep: string | null;
   endereco?: string | null;
   numero?: string | null;
+  complemento?: string | null;
   mapEmbed?: string | null;
+  streetView?: string | null;
 }
 
 export interface Veiculo {
@@ -208,7 +210,19 @@ export interface SiteConfig {
   endereco: Record<string, string | null>;
   redesSociais: Record<string, string | null>;
   analytics: Record<string, string | null>;
-  features: { permitirPropostas: boolean; permitirFavoritos: boolean; permitirCadastro: boolean; permitirChat: boolean };
+  // Configurações de Site (vêm do ERP via GlobalConfig → /site/config). O site liga/desliga
+  // seções e regras conforme estas flags. Todas opcionais p/ degradar se a API for antiga.
+  features: {
+    permitirPropostas: boolean; permitirFavoritos: boolean; permitirCadastro: boolean; permitirChat: boolean;
+    mostrarEncerrados?: boolean; bloquearEncerrados?: boolean; mostrarSuspensos?: boolean; bloquearSuspensos?: boolean;
+    whatsappFlutuante?: boolean; buscador?: boolean; mapa?: boolean; agenda?: boolean; blog?: boolean;
+    liveHome?: boolean; destaquesHome?: boolean; newsletterModal?: boolean;
+    mostrarVisitas?: boolean; mostrarHabilitados?: boolean; mostrarAnexos?: boolean; mostrarLances?: boolean;
+    mostrarTaxas?: boolean; mostrarObservacoes?: boolean;
+  };
+  preferencias?: { loteLayout?: string; newsletterCampos?: string };
+  // Textos do hero (editáveis no ERP). Vazio/ausente = o site usa o texto padrão do template.
+  hero?: { titulo?: string | null; subtitulo?: string | null };
   realtime?: { url: string | null; clientId: string | null };
 }
 

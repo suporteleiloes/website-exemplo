@@ -3,6 +3,7 @@ import { getContatoSetores, getSiteConfig, type ContatoSetores } from '@/lib/api
 import type { SiteConfig } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Contato', description: 'Fale com o leiloeiro: dúvidas, suporte e atendimento.', alternates: { canonical: '/contato' } };
 
 export default async function ContatoPage() {
   const safe = async <T,>(p: Promise<T>, fb: T) => { try { return await p; } catch { return fb; } };

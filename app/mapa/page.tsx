@@ -3,16 +3,17 @@ import { getFiltros } from '@/lib/api';
 import type { Filtros } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Mapa de imóveis', description: 'Localização dos imóveis em leilão no mapa.', alternates: { canonical: '/mapa' } };
 
-export default async function MapaPage() {
+export default async function MapaPage({ searchParams }: { searchParams: { leilao?: string } }) {
   let filtros: Filtros | null = null;
-  try { filtros = await getFiltros(); } catch { /* segue sem selects */ }
+  try { filtros = await getFiltros(searchParams.leilao ? { leilao: searchParams.leilao } : undefined); } catch { /* segue sem selects */ }
 
   return (
     <div className="container-page">
-      <h1 className="mb-1 text-2xl font-bold text-gray-800">Mapa de bens</h1>
-      <p className="mb-4 text-sm text-gray-500">Encontre lotes por localização. Filtre por estado e cidade.</p>
-      <MapaBens ufs={filtros?.ufs || []} cidades={filtros?.cidades || []} />
+      <h1 className="mb-1 text-2xl font-bold text-gray-800">Localização dos Imóveis</h1>
+      <p className="mb-4 text-sm text-gray-500">Encontre os imóveis por localização no mapa. Filtre por estado e cidade.</p>
+      <MapaBens ufs={filtros?.ufs || []} cidades={filtros?.cidades || []} leilao={searchParams.leilao} />
     </div>
   );
 }

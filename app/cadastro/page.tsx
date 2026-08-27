@@ -5,6 +5,7 @@ import { getSessionUser } from '@/lib/auth';
 import { API_BASE, TENANT, TENANT_HEADER } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Criar minha conta', description: 'Cadastre-se gratuitamente para participar dos leilões.', alternates: { canonical: '/cadastro' } };
 
 // Lê flags de cadastro (versão, PJ/estrangeiro) do endpoint público V1.
 async function getVersaoCadastro() {
@@ -17,21 +18,59 @@ async function getVersaoCadastro() {
   } catch { return null; }
 }
 
+const HOWTO = [
+  { n: '1', t: 'Cadastro.', d: 'Preencha seus dados e crie a senha.' },
+  { n: '2', t: 'Documentos.', d: 'Envie documento com foto e comprovante de endereço.' },
+  { n: '3', t: 'Habilitação.', d: 'A análise leva até 1 dia útil por leilão.' },
+];
+
 export default async function CadastroPage() {
   const user = await getSessionUser().catch(() => null);
   if (user) redirect('/conta');
   const versao = await getVersaoCadastro();
 
   return (
-    <div className="container-page max-w-3xl">
-      <div className="rounded-lg border border-gray-200 bg-white p-6 sm:p-8">
-        <h1 className="text-2xl font-bold text-gray-800">Criar conta</h1>
-        <p className="mt-1 text-sm text-gray-500">Cadastre-se para participar dos leilões e da venda direta.</p>
-        <div className="mt-6"><CadastroForm versao={versao} /></div>
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Já tem conta? <Link href="/login" className="font-medium text-marca">Entrar</Link>
-        </p>
+    <main className="lei-cad">
+      <div className="lei-cad__crumb"><Link href="/">Início</Link> › Cadastro</div>
+
+      <div className="lei-cad__head">
+        <h1 className="lei-cad__title">Criar minha conta</h1>
+        <p className="lei-cad__lead">O cadastro é gratuito. Depois de criar a conta, você solicita a habilitação em cada leilão que quiser participar.</p>
       </div>
-    </div>
+
+      {/* passos */}
+      <div className="lei-cad__steps">
+        <span className="lei-cad__step is-active"><i>1</i>Seus dados</span>
+        <span className="lei-cad__sep" />
+        <span className="lei-cad__step"><i>2</i>Documentos</span>
+        <span className="lei-cad__sep" />
+        <span className="lei-cad__step"><i>3</i>Habilitação</span>
+      </div>
+
+      <div className="lei-cad__grid">
+        <div className="lei-cad__card">
+          <CadastroForm versao={versao} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="lei-cad__aside-card">
+            <div className="lei-cad__aside-title">Como funciona</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+              {HOWTO.map((s) => (
+                <div key={s.n} className="lei-cad__howto">
+                  <i>{s.n}</i>
+                  <span><b>{s.t}</b> {s.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lei-cad__note">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--brand-accent-ink)" strokeWidth="2" style={{ flex: 'none', marginTop: 2 }}><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>
+            <span>O cadastro não habilita automaticamente. É preciso solicitar habilitação em cada leilão, respeitando o prazo do edital.</span>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }

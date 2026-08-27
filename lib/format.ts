@@ -27,7 +27,7 @@ export const STATUS_LEILAO: Record<number, string> = {
 
 // Códigos de status do lote.
 export const STATUS_LOTE: Record<number, string> = {
-  0: 'Rascunho', 1: 'Aberto', 2: 'Em pregão', 5: 'Homologando', 7: 'Condicional',
+  0: 'Rascunho', 1: 'Aberto', 2: 'Em leilão', 5: 'Homologando', 7: 'Condicional',
   8: 'Sem licitantes', 9: 'Baixa oferta', 10: 'Retirado', 11: 'Cancelado', 12: 'Prejudicado',
   13: 'Suspenso', 31: 'Repasse', 100: 'Vendido',
 };
@@ -52,3 +52,54 @@ export function corStatusLote(status: number): string {
 
 // Leilão aceita lance? (status 3=aberto ou 4=em leilão)
 export const leilaoPermiteLance = (status: number) => status === 3 || status === 4;
+
+const TZ = 'America/Sao_Paulo';
+
+export function hora(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('pt-BR', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+}
+
+export function horaSeg(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('pt-BR', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+export function mascararApelido(apelido: string | null | undefined): string {
+  const s = (apelido || '').trim();
+  if (!s) return 'Licitante';
+  if (s.length <= 2) return s;
+  return s.slice(0, 2) + '*'.repeat(s.length - 2);
+}
+
+export const leilaoEncerrado = (status: number) => status === 99;
+
+export function dataNoPassado(iso: string | null | undefined): boolean {
+  if (!iso) return false;
+  const ms = new Date(iso).getTime();
+  return !isNaN(ms) && ms - Date.now() <= 0;
+}
+
+export type ModoPrazo = 'contador' | 'data' | 'sem_data';
+
+// Decide contador vs data vs sem-data para o prazo do leilão (mesma regra do kleiloes-v2).
+export function prazoLeilao(status: number, ate?: string | null): { modo: ModoPrazo; rotulo: string } {
+  if (leilaoEncerrado(status)) {
+    return ate ? { modo: 'data', rotulo: 'Realizado em' } : { modo: 'sem_data', rotulo: 'Leilão realizado' };
+  }
+  if (!ate) return { modo: 'sem_data', rotulo: 'Data a confirmar' };
+  if (dataNoPassado(ate)) return { modo: 'data', rotulo: 'Data prevista' };
+  return { modo: 'contador', rotulo: status === 1 || status === 2 ? 'Inicia em' : 'Encerra em' };
+}
+
+// `leilao.local` vem como STRING em alguns tenants e como OBJETO {cidade,uf,...} em outros.
+export function textoLocal(loc: unknown): string {
+  if (!loc) return '';
+  if (typeof loc === 'string') return loc;
+  const o = loc as Record<string, string | null>;
+  return [o.cidade, o.uf].filter(Boolean).join(' - ');
+}

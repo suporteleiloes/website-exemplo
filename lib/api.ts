@@ -3,7 +3,7 @@
 // - Envelope: listas = { result, total, page, limit, pages }; item = objeto; erro = { error, status, message, code }.
 // - Cache: usa o cache nativo do Next (revalidate por endpoint — ver GUIA-WEBSITE-V2 §10).
 
-import { V2, TENANT, TENANT_HEADER } from './config';
+import { V2, TENANT, TENANT_HEADER, SITE_TOKEN, SITE_TOKEN_HEADER } from './config';
 import type {
   Paginated, Leilao, Lote, LancePublico, Filtros, SiteConfig, Banner, MenuGrupo, Comitente, Leiloeiro,
 } from './types';
@@ -44,7 +44,11 @@ interface FetchOpts {
 export async function apiGet<T>(path: string, opts: FetchOpts = {}): Promise<T> {
   const url = `${V2}${path}${buildQuery(opts.params)}`;
   const res = await fetch(url, {
-    headers: { [TENANT_HEADER]: opts.tenant || TENANT, Accept: 'application/json' },
+    headers: {
+      [TENANT_HEADER]: opts.tenant || TENANT,
+      ...(SITE_TOKEN ? { [SITE_TOKEN_HEADER]: SITE_TOKEN } : {}),
+      Accept: 'application/json',
+    },
     next: { revalidate: opts.revalidate ?? 30 },
   });
   const text = await res.text();
@@ -67,7 +71,7 @@ export async function apiGet<T>(path: string, opts: FetchOpts = {}): Promise<T> 
 export async function apiPost<T>(path: string, payload: unknown, tenant = TENANT): Promise<T> {
   const res = await fetch(`${V2}${path}`, {
     method: 'POST',
-    headers: { [TENANT_HEADER]: tenant, 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { [TENANT_HEADER]: tenant, ...(SITE_TOKEN ? { [SITE_TOKEN_HEADER]: SITE_TOKEN } : {}), 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(payload),
     cache: 'no-store',
   });
@@ -83,7 +87,8 @@ export async function apiPost<T>(path: string, payload: unknown, tenant = TENANT
 
 // ── Camada tipada de conveniência ────────────────────────────────
 
-export const getSiteConfig = () => apiGet<SiteConfig>('/site/config', { revalidate: 120 });
+// revalidate 0: config muda "na hora" quando o leiloeiro salva no ERP (o site puxa direto da API).
+export const getSiteConfig = () => apiGet<SiteConfig>('/site/config', { revalidate: 0 });
 export const getLeiloeiro = () => apiGet<Leiloeiro>('/site/leiloeiro', { revalidate: 120 });
 export const getMenus = () => apiGet<{ result: MenuGrupo[] }>('/site/menus', { revalidate: 120 });
 export const getBanners = (secao = 'home') => apiGet<{ result: Banner[]; total: number }>('/site/banners', { params: { secao }, revalidate: 60 });
