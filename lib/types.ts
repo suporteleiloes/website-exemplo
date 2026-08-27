@@ -224,6 +224,13 @@ export interface SiteConfig {
   // Textos do hero (editáveis no ERP). Vazio/ausente = o site usa o texto padrão do template.
   hero?: { titulo?: string | null; subtitulo?: string | null };
   realtime?: { url: string | null; clientId: string | null };
+  // Rodapé editável (aba "Footer" do modal de Site). Lista de leiloeiros + toggles de links.
+  footer?: {
+    leiloeiros?: { nome: string; matricula: string }[];
+    colLeiloes?: { mostrar?: boolean; calendario?: boolean; vendaDireta?: boolean; imoveis?: boolean; veiculos?: boolean; realizados?: boolean };
+    colParticipante?: { mostrar?: boolean; comoParticipar?: boolean; cadastro?: boolean; duvidas?: boolean; faleConosco?: boolean };
+    lgpdEmail?: string | null;
+  };
 }
 
 export interface Banner {

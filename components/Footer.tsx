@@ -46,14 +46,23 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
   const telefone = (MODO_EXEMPLO ? '' : c?.telefone) || '(00) 0000-0000';
   const email = (MODO_EXEMPLO ? '' : c?.email) || 'contato@leiloeiro.com.br';
   const horario = (MODO_EXEMPLO ? '' : c?.horario) || 'Seg. a Sex., das 8h às 11:30h e das 13:30h às 18h';
-  const lgpd = (MODO_EXEMPLO ? '' : (c as { lgpd?: string } | undefined)?.lgpd) || 'lgpd@leiloeiro.com.br';
+  const fCfg = config?.footer;
+  const lgpd = (MODO_EXEMPLO ? '' : (fCfg?.lgpdEmail || (c as { lgpd?: string } | undefined)?.lgpd)) || 'lgpd@leiloeiro.com.br';
+  // Toggles das colunas de links (aba "Footer"). Default = mostrar (só esconde com === false).
+  const colL = fCfg?.colLeiloes;
+  const colP = fCfg?.colParticipante;
+  const showL = (k: keyof NonNullable<typeof colL>) => MODO_EXEMPLO || !colL || colL[k] !== false;
+  const showP = (k: keyof NonNullable<typeof colP>) => MODO_EXEMPLO || !colP || colP[k] !== false;
   // Links dos contatos: endereço → Google Maps, telefone → app de ligação, e-mail → app de e-mail.
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${endL1}, ${endL2}`)}`;
   const telHref = `tel:${telefone.replace(/[^\d+]/g, '')}`;
   const mailHref = `mailto:${email}`;
 
-  const listaLeiloeiros = leiloeiros.length > 0
-    ? leiloeiros.map((l) => ({ nome: l.nome || 'Leiloeiro Oficial', matricula: l.matricula || '0000' }))
+  // Prioridade: lista editada na aba "Footer" → leiloeiro(s) do ERP → placeholders do template.
+  const leiloeirosCfg = (!MODO_EXEMPLO && fCfg?.leiloeiros && fCfg.leiloeiros.length > 0) ? fCfg.leiloeiros : null;
+  const fonteLeiloeiros = leiloeirosCfg ?? (leiloeiros.length > 0 ? leiloeiros : null);
+  const listaLeiloeiros = fonteLeiloeiros
+    ? fonteLeiloeiros.map((l) => ({ nome: l.nome || 'Leiloeiro Oficial', matricula: l.matricula || '0000' }))
     : [
         { nome: 'Nome do Leiloeiro Oficial', matricula: '0000' },
         { nome: 'Segundo Leiloeiro Oficial', matricula: '0000' },
@@ -112,27 +121,31 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
         </div>
 
         {/* Leilões */}
-        <div>
-          <div className="lei-footer__coltitle">Leilões</div>
-          <div className="lei-footer__links">
-            <Link href="/agenda">Calendário</Link>
-            <Link href="/venda-direta">Venda Direta</Link>
-            <Link href="/lotes?categoria=Im%C3%B3veis">Imóveis</Link>
-            <Link href="/lotes?categoria=Ve%C3%ADculos">Veículos</Link>
-            <Link href="/leiloes?encerrados=1">Realizados</Link>
+        {(MODO_EXEMPLO || colL?.mostrar !== false) && (
+          <div>
+            <div className="lei-footer__coltitle">Leilões</div>
+            <div className="lei-footer__links">
+              {showL('calendario') && <Link href="/agenda">Calendário</Link>}
+              {showL('vendaDireta') && <Link href="/venda-direta">Venda Direta</Link>}
+              {showL('imoveis') && <Link href="/lotes?categoria=Im%C3%B3veis">Imóveis</Link>}
+              {showL('veiculos') && <Link href="/lotes?categoria=Ve%C3%ADculos">Veículos</Link>}
+              {showL('realizados') && <Link href="/leiloes?encerrados=1">Realizados</Link>}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Participante */}
-        <div>
-          <div className="lei-footer__coltitle">Participante</div>
-          <div className="lei-footer__links">
-            <Link href="/ajuda">Como participar</Link>
-            <Link href="/cadastro">Cadastro</Link>
-            <Link href="/ajuda">Dúvidas frequentes</Link>
-            <Link href="/contato">Fale conosco</Link>
+        {(MODO_EXEMPLO || colP?.mostrar !== false) && (
+          <div>
+            <div className="lei-footer__coltitle">Participante</div>
+            <div className="lei-footer__links">
+              {showP('comoParticipar') && <Link href="/ajuda">Como participar</Link>}
+              {showP('cadastro') && <Link href="/cadastro">Cadastro</Link>}
+              {showP('duvidas') && <Link href="/ajuda">Dúvidas frequentes</Link>}
+              {showP('faleConosco') && <Link href="/contato">Fale conosco</Link>}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Atendimento */}
         <div>
