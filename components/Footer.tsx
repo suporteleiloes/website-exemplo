@@ -104,7 +104,7 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={nome} className="lei-footer__logo" style={{ height: 46, width: 'auto', maxWidth: 230, objectFit: 'contain' }} />
+              <img src={logoUrl} alt={nome} className="lei-footer__logo" style={{ height: 64, width: 'auto', maxWidth: 260, objectFit: 'contain' }} />
             ) : (
               <>
                 <span className="lei-logo__mark" style={{ background: 'var(--color-danger)', width: 46, height: 46, borderRadius: 10 }}>
