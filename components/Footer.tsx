@@ -51,8 +51,11 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
   // Toggles das colunas de links (aba "Footer"). Default = mostrar (só esconde com === false).
   const colL = fCfg?.colLeiloes;
   const colP = fCfg?.colParticipante;
+  const colAt = fCfg?.colAtendimento;
+  const socialCfg = fCfg?.social;
   const showL = (k: keyof NonNullable<typeof colL>) => MODO_EXEMPLO || !colL || colL[k] !== false;
   const showP = (k: keyof NonNullable<typeof colP>) => MODO_EXEMPLO || !colP || colP[k] !== false;
+  const showSocial = (k: 'facebook' | 'instagram' | 'whatsapp') => MODO_EXEMPLO || !socialCfg || socialCfg[k] !== false;
   // Links dos contatos: endereço → Google Maps, telefone → app de ligação, e-mail → app de e-mail.
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${endL1}, ${endL2}`)}`;
   const telHref = `tel:${telefone.replace(/[^\d+]/g, '')}`;
@@ -73,7 +76,7 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
     ['facebook', redes.facebook || '#'],
     ['instagram', redes.instagram || '#'],
     ['whatsapp', redes.whatsapp || (c?.whatsapp ? `https://wa.me/${c.whatsapp.replace(/\D/g, '')}` : '#')],
-  ] as const);
+  ] as const).filter(([rede]) => showSocial(rede));
 
   return (
     <footer className="lei-footer">
@@ -111,13 +114,15 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
               ))}
             </div>
           </div>
-          <div className="lei-social">
-            {social.map(([rede, url]) => (
-              <a key={rede} href={url} aria-label={rede} target={url === '#' ? undefined : '_blank'} rel="noopener noreferrer">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">{ICON[rede]}</svg>
-              </a>
-            ))}
-          </div>
+          {(MODO_EXEMPLO || socialCfg?.mostrar !== false) && social.length > 0 && (
+            <div className="lei-social">
+              {social.map(([rede, url]) => (
+                <a key={rede} href={url} aria-label={rede} target={url === '#' ? undefined : '_blank'} rel="noopener noreferrer">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">{ICON[rede]}</svg>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Leilões */}
@@ -148,6 +153,7 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
         )}
 
         {/* Atendimento */}
+        {(MODO_EXEMPLO || colAt?.mostrar !== false) && (
         <div>
           <div className="lei-footer__coltitle">Atendimento</div>
           <div className="lei-footer__links" style={{ gap: 15 }}>
@@ -173,6 +179,7 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
             </a>
           </div>
         </div>
+        )}
       </div>
 
       {/* barra final */}

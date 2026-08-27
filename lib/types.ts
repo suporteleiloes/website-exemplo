@@ -229,6 +229,8 @@ export interface SiteConfig {
     leiloeiros?: { nome: string; matricula: string }[];
     colLeiloes?: { mostrar?: boolean; calendario?: boolean; vendaDireta?: boolean; imoveis?: boolean; veiculos?: boolean; realizados?: boolean };
     colParticipante?: { mostrar?: boolean; comoParticipar?: boolean; cadastro?: boolean; duvidas?: boolean; faleConosco?: boolean };
+    colAtendimento?: { mostrar?: boolean };
+    social?: { mostrar?: boolean; facebook?: boolean; instagram?: boolean; whatsapp?: boolean };
     lgpdEmail?: string | null;
   };
 }
