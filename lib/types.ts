@@ -223,6 +223,9 @@ export interface SiteConfig {
   preferencias?: { loteLayout?: string; newsletterCampos?: string };
   // Textos do hero (editáveis no ERP). Vazio/ausente = o site usa o texto padrão do template.
   hero?: { titulo?: string | null; subtitulo?: string | null };
+  // Aba "Website": CSS/JS/metatags injetados no site + site key do reCAPTCHA (nunca o secret).
+  customizacao?: { css?: string | null; scripts?: string | null; metas?: string | null; recaptchaSiteKey?: string | null };
+  seo?: { titleTemplate?: string | null; defaultTitle?: string | null; defaultDescription?: string | null; ogImage?: string | null; indexavel?: boolean };
   realtime?: { url: string | null; clientId: string | null };
   // Rodapé editável (aba "Footer" do modal de Site). Lista de leiloeiros + toggles de links.
   footer?: {

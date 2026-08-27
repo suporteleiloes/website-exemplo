@@ -180,7 +180,7 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
             )}
           </div>
 
-          {bem?.siteObservacao && (
+          {config?.features?.mostrarObservacoes !== false && bem?.siteObservacao && (
             <div className="lei-lote-card">
               <h2>Observações</h2>
               <div className="lei-lote-desc" dangerouslySetInnerHTML={{ __html: sanitizeHtml(bem.siteObservacao) }} />
@@ -270,7 +270,7 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
             </div>
           </div>
 
-          {editalUrl && (
+          {config?.features?.mostrarAnexos !== false && editalUrl && (
             <div className="lei-lote-com">
               <div className="lei-lote-com__label">Documentos</div>
               <a href={editalUrl} target="_blank" rel="noopener noreferrer" className="lei-lote-doc">

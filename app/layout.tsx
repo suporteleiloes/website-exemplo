@@ -15,16 +15,24 @@ import type { SiteConfig, MenuGrupo, Leiloeiro } from '@/lib/types';
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getSiteConfig().catch(() => null);
   const nome = MODO_EXEMPLO ? 'Leiloeiro Modelo' : (config?.siteName || 'Leilões');
-  const desc = (config as { descricao?: string | null } | null)?.descricao || 'Leilões judiciais e extrajudiciais de imóveis, veículos e máquinas. Participe online.';
+  const seo = config?.seo;
+  const desc = (MODO_EXEMPLO ? null : seo?.defaultDescription) || 'Leilões judiciais e extrajudiciais de imóveis, veículos e máquinas. Participe online.';
+  const ogImage = MODO_EXEMPLO ? null : (seo?.ogImage || null);
+  const favicon = MODO_EXEMPLO ? null : (config?.logo?.icon || null);
+  // seo.indexavel=false (homologação) → noindex em tudo, pra não vazar pro Google.
+  const indexavel = MODO_EXEMPLO ? true : (seo?.indexavel !== false);
   return {
     metadataBase: new URL(SITE_URL),
     title: { default: `${nome} — Leilões online de imóveis, veículos e mais`, template: `%s · ${nome}` },
     description: desc,
     applicationName: nome,
     alternates: { canonical: '/' },
-    openGraph: { siteName: nome, type: 'website', locale: 'pt_BR', title: nome, description: desc, url: SITE_URL },
-    twitter: { card: 'summary_large_image', title: nome, description: desc },
-    robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
+    ...(favicon ? { icons: { icon: favicon, shortcut: favicon, apple: favicon } } : {}),
+    openGraph: { siteName: nome, type: 'website', locale: 'pt_BR', title: nome, description: desc, url: SITE_URL, ...(ogImage ? { images: [{ url: ogImage }] } : {}) },
+    twitter: { card: 'summary_large_image', title: nome, description: desc, ...(ogImage ? { images: [ogImage] } : {}) },
+    robots: indexavel
+      ? { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } }
+      : { index: false, follow: false, googleBot: { index: false, follow: false } },
   };
 }
 
@@ -53,12 +61,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       + `}`
     : '';
 
+  // Aba "Website" (customização do cliente): CSS injetado no <head>, metatags via head-script
+  // (roda antes do render), scripts JS no fim do <body>. No MODO_EXEMPLO nada disso é aplicado.
+  const custom = MODO_EXEMPLO ? null : config?.customizacao;
+
   return (
     <html lang="pt-br">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&display=swap" />
         {cssVars ? <style dangerouslySetInnerHTML={{ __html: cssVars }} /> : null}
+        {custom?.css ? <style dangerouslySetInnerHTML={{ __html: custom.css }} /> : null}
+        {custom?.metas ? <script dangerouslySetInnerHTML={{ __html: `try{document.head.insertAdjacentHTML('beforeend',${JSON.stringify(custom.metas)})}catch(e){}` }} /> : null}
       </head>
       <body>
         <Header config={config} menus={menus} user={user} />
@@ -66,6 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Footer config={config} leiloeiros={leiloeiros} />
         <WhatsAppFloat config={config} />
         {config?.features?.permitirChat !== false && <Messenger slug={WIDGET_SLUG} />}
+        {custom?.scripts ? <script dangerouslySetInnerHTML={{ __html: custom.scripts }} /> : null}
       </body>
     </html>
   );
