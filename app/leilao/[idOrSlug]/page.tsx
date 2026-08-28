@@ -85,11 +85,12 @@ export default async function LeilaoPage(
     redirect(`/lote/${lista[0].slug || lista[0].id}`);
   }
 
-  // Comitentes vêm agregados dos lotes e podem repetir — deduplica por id/documento/nome.
+  // Comitentes vêm agregados dos lotes e repetem (mesmo nome, ids diferentes) — deduplica por
+  // documento/nome (o que identifica o comitente de fato), não por id.
   const comitentesVistos = new Set<string>();
   const comitentes = (leilao.comitentes || []).filter((c) => {
     const co = c as { id?: number | string; documento?: string; nome?: string };
-    const chave = String(co.id ?? co.documento ?? co.nome ?? Math.random());
+    const chave = String(co.documento || co.nome || co.id || Math.random()).trim().toLowerCase();
     if (comitentesVistos.has(chave)) return false;
     comitentesVistos.add(chave);
     return true;
