@@ -41,55 +41,77 @@ export default function ContatoForm({ setores }: { setores: ContatoSetores | nul
   }
 
   const erroNo = (campo: string) => msg?.tipo === 'erro' && msg.campo === campo;
+  const semAssuntos = !setores?.assuntos?.length;
+  const semDepartamentos = !setores?.departamentos?.length;
 
   return (
-    <form onSubmit={enviar} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className="label">Nome *</label>
-          <input className={`input ${erroNo('nome') ? 'border-red-400' : ''}`} value={form.nome} onChange={(e) => set('nome', e.target.value)} required />
+    <form onSubmit={enviar} className="lei-fc-formEl">
+      <p className="lei-fc-formEl__lead">Preencha os campos abaixo corretamente:</p>
+
+      <div className="lei-fc-field">
+        <label htmlFor="fc-nome">Nome Completo<sup>*</sup></label>
+        <input id="fc-nome" type="text" className={erroNo('nome') ? 'is-error' : ''} value={form.nome} onChange={(e) => set('nome', e.target.value)} required />
+      </div>
+
+      <div className="lei-fc-group">
+        <div className="lei-fc-field">
+          <label htmlFor="fc-email">E-mail<sup>*</sup></label>
+          <input id="fc-email" type="email" className={erroNo('email') ? 'is-error' : ''} value={form.email} onChange={(e) => set('email', e.target.value)} required />
         </div>
-        <div>
-          <label className="label">E-mail *</label>
-          <input type="email" className={`input ${erroNo('email') ? 'border-red-400' : ''}`} value={form.email} onChange={(e) => set('email', e.target.value)} required />
-        </div>
-        <div>
-          <label className="label">Telefone</label>
-          <input className="input" value={form.telefone} onChange={(e) => set('telefone', e.target.value)} placeholder="(11) 99999-0000" />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="label">Assunto</label>
-            <select className="input" value={form.assunto} onChange={(e) => set('assunto', e.target.value)}>
-              <option value="">—</option>
-              {setores?.assuntos.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="label">Departamento</label>
-            <select className="input" value={form.departamento} onChange={(e) => set('departamento', e.target.value)}>
-              <option value="">—</option>
-              {setores?.departamentos.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
-            </select>
-          </div>
+        <div className="lei-fc-field">
+          <label htmlFor="fc-tel">Telefone</label>
+          <input id="fc-tel" type="text" placeholder="(DDD) + Telefone" value={form.telefone} onChange={(e) => set('telefone', e.target.value)} />
         </div>
       </div>
-      <div>
-        <label className="label">Mensagem *</label>
-        <textarea className={`input ${erroNo('mensagem') ? 'border-red-400' : ''}`} rows={5} value={form.mensagem} onChange={(e) => set('mensagem', e.target.value)} required />
+
+      <div className="lei-fc-group">
+        <div className="lei-fc-field">
+          <label htmlFor="fc-assunto">Assunto</label>
+          <select id="fc-assunto" value={form.assunto} onChange={(e) => set('assunto', e.target.value)}>
+            {semAssuntos ? (
+              <option value="">Geral</option>
+            ) : (
+              <>
+                <option value="">Selecione</option>
+                {setores!.assuntos.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
+              </>
+            )}
+          </select>
+        </div>
+        <div className="lei-fc-field">
+          <label htmlFor="fc-dep">Departamento</label>
+          <select id="fc-dep" value={form.departamento} onChange={(e) => set('departamento', e.target.value)}>
+            {semDepartamentos ? (
+              <option value="">Atendimento</option>
+            ) : (
+              <>
+                <option value="">Selecione</option>
+                {setores!.departamentos.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </>
+            )}
+          </select>
+        </div>
       </div>
-      <label className="flex items-center gap-2 text-sm text-gray-600">
-        <input type="checkbox" checked={form.newsletter} onChange={(e) => set('newsletter', e.target.checked)} />
-        Quero receber novidades e leilões por e-mail
-      </label>
+
+      <div className="lei-fc-field">
+        <label htmlFor="fc-msg">Mensagem</label>
+        <textarea id="fc-msg" rows={7} className={erroNo('mensagem') ? 'is-error' : ''} value={form.mensagem} onChange={(e) => set('mensagem', e.target.value)} required />
+      </div>
+
+      <div className="lei-fc-check">
+        <label>
+          <input type="checkbox" checked={form.newsletter} onChange={(e) => set('newsletter', e.target.checked)} />
+          <span>Deseja receber nossas principais oportunidades por e-mail?</span>
+        </label>
+      </div>
+
       {/* honeypot — escondido de humanos, bots preenchem */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => set('website', e.target.value)}
-        className="absolute left-[-9999px] h-0 w-0 opacity-0" aria-hidden="true" />
+        aria-hidden="true" style={{ position: 'absolute', left: '-9999px', height: 0, width: 0, opacity: 0 }} />
 
-      <div className="flex items-center gap-3">
-        <button type="submit" className="btn-primary" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar mensagem'}</button>
-        {msg && <span className={`text-sm ${msg.tipo === 'ok' ? 'text-green-700' : 'text-red-600'}`}>{msg.texto}</span>}
-      </div>
+      {msg && <p className={`lei-fc-alert ${msg.tipo === 'ok' ? 'is-ok' : 'is-erro'}`}>{msg.texto}</p>}
+
+      <button type="submit" className="lei-fc-submit" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar Mensagem'}</button>
     </form>
   );
 }

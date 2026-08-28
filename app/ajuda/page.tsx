@@ -40,7 +40,7 @@ export default async function AjudaPage(props: { searchParams: Promise<{ busca?:
         </div>
       </section>
 
-      <div className="container-page py-10">
+      <div className="mx-auto max-w-5xl px-6 py-10">
         {/* Resultados de busca */}
         {busca ? (
           <>
