@@ -41,16 +41,18 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
   const c = config?.contato;
   const redes = config?.redesSociais || {};
 
-  // No MODO_EXEMPLO usamos SEMPRE os placeholders neutros do template (ignora o config do tenant,
-  // que traria dados reais do leiloeiro de teste). Fora dele, config → fallback placeholder.
-  const end = MODO_EXEMPLO ? { l1: '', l2: '' } : duasLinhasEndereco(config?.endereco);
-  const endL1 = end.l1 || 'Av. Exemplo, 000';
-  const endL2 = end.l2 || 'Cidade - UF · 00000-000';
-  const telefone = (MODO_EXEMPLO ? '' : c?.telefone) || '(00) 0000-0000';
-  const email = (MODO_EXEMPLO ? '' : c?.email) || 'contato@leiloeiro.com.br';
-  const horario = (MODO_EXEMPLO ? '' : c?.horario) || 'Seg. a Sex., das 8h às 11:30h e das 13:30h às 18h';
+  // MODO_EXEMPLO → placeholders neutros do template. Cliente real → valores do config; vazio =
+  // NÃO renderiza o item (nada de "Av. Exemplo, 000" / "lgpd@leiloeiro.com.br" falsos no ar).
+  const ex = MODO_EXEMPLO;
+  const end = ex ? { l1: 'Av. Exemplo, 000', l2: 'Cidade - UF · 00000-000' } : duasLinhasEndereco(config?.endereco);
+  const endL1 = end.l1;
+  const endL2 = end.l2;
+  const temEndereco = !!(endL1 || endL2);
+  const telefone = ex ? '(00) 0000-0000' : (c?.telefone || '');
+  const email = ex ? 'contato@leiloeiro.com.br' : (c?.email || '');
+  const horario = ex ? 'Seg. a Sex., das 8h às 11:30h e das 13:30h às 18h' : (c?.horario || '');
   const fCfg = config?.footer;
-  const lgpd = (MODO_EXEMPLO ? '' : (fCfg?.lgpdEmail || (c as { lgpd?: string } | undefined)?.lgpd)) || 'lgpd@leiloeiro.com.br';
+  const lgpd = ex ? 'lgpd@leiloeiro.com.br' : (fCfg?.lgpdEmail || (c as { lgpd?: string } | undefined)?.lgpd || '');
   // Toggles das colunas de links (aba "Footer"). Default = mostrar (só esconde com === false).
   const colL = fCfg?.colLeiloes;
   const colP = fCfg?.colParticipante;
@@ -167,26 +169,36 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
         <div>
           <div className="lei-footer__coltitle">Atendimento</div>
           <div className="lei-footer__links" style={{ gap: 15 }}>
+            {temEndereco && (
             <a className="lei-footer__contact" href={mapsHref} target="_blank" rel="noopener noreferrer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
-              <span>{endL1}<br />{endL2}</span>
+              <span>{endL1}{endL1 && endL2 && <br />}{endL2}</span>
             </a>
+            )}
+            {telefone && (
             <a className="lei-footer__contact" href={telHref}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.6a2 2 0 0 1-.5 2.1L8.1 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.8.3 1.7.6 2.6.7a2 2 0 0 1 1.7 2z" /></svg>
               <span>{telefone}</span>
             </a>
+            )}
+            {email && (
             <a className="lei-footer__contact" href={mailHref}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M2 7l10 6 10-6" /></svg>
               <span>{email}</span>
             </a>
+            )}
+            {horario && (
             <div className="lei-footer__contact">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></svg>
               <span>{horario}</span>
             </div>
+            )}
+            {lgpd && (
             <a className="lei-footer__contact" href={`mailto:${lgpd}`}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M2 7l10 6 10-6" /></svg>
               <span>LGPD: {lgpd}</span>
             </a>
+            )}
           </div>
         </div>
         )}
