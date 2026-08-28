@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import FiltroBarLote from '@/components/FiltroBarLote';
 import LoteCard from '@/components/LoteCard';
 import Paginacao from '@/components/Paginacao';
+import RegistrarVisita from '@/components/RegistrarVisita';
 import { getLeilao, getLotes, getFiltros, getLeilaoDocumentos, ApiException } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
 import { TIPO_LEILAO, textoLocal } from '@/lib/format';
@@ -104,6 +105,7 @@ export default async function LeilaoPage(
 
   return (
     <main>
+      <RegistrarVisita tipo="leilao" id={leilao.id} />
       {/* Hero navy */}
       <section className="lei-ev-hero">
         <div className="lei-ev-hero__in">

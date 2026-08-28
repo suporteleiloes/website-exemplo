@@ -132,7 +132,7 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
 
   return (
     <div className="lei-lote-wrap">
-      <RegistrarVisita loteId={lote.id} />
+      <RegistrarVisita tipo="lote" id={lote.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldProduto }} />
       <div className="lei-lote-crumbrow">
         <div className="lei-lote-crumb">

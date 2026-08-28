@@ -16,18 +16,20 @@ function visitorId(): string {
   }
 }
 
-// Registra 1 visita ao lote ao abrir a página (client-side, pra não contar prefetch/bot do SSR).
-export default function RegistrarVisita({ loteId }: { loteId: number }) {
+// Registra 1 visita ao abrir a página (client-side, pra não contar prefetch/bot do SSR).
+// tipo 'lote' → statsVisitas do lote; tipo 'leilao' → statsVisitas do leilão.
+export default function RegistrarVisita({ tipo = 'lote', id }: { tipo?: 'lote' | 'leilao'; id: number }) {
   const disparado = useRef(false);
   useEffect(() => {
-    if (disparado.current || !loteId) return;
+    if (disparado.current || !id) return;
     disparado.current = true;
-    fetch(`/api/proxy/website/v2/lotes/${loteId}/visita`, {
+    const path = tipo === 'leilao' ? `leiloes/${id}/visita` : `lotes/${id}/visita`;
+    fetch(`/api/proxy/website/v2/${path}`, {
       method: 'POST',
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ v: visitorId() }),
     }).catch(() => {});
-  }, [loteId]);
+  }, [tipo, id]);
   return null;
 }
