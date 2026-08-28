@@ -19,6 +19,16 @@ const ICONE: Record<string, string> = {
 function icone(cat: string) { return ICONE[cat] || '📄'; }
 function slugCat(cat: string) { return encodeURIComponent(cat); }
 
+// FAQ padrão — mostrado quando o ERP ainda não tem artigos publicados (fallback neutro,
+// respostas inline via <details>, sem página de detalhe).
+const FAQ_PADRAO: { icone: string; pergunta: string; resposta: string }[] = [
+  { icone: '🚀', pergunta: 'Como faço meu cadastro?', resposta: 'Clique em "Cadastre-se" no topo do site, preencha seus dados (pessoa física ou jurídica) e confirme pelo e-mail que você receber. O cadastro é gratuito.' },
+  { icone: '✅', pergunta: 'Como me habilito para participar de um leilão?', resposta: 'Depois de cadastrado, abra a página do leilão desejado e clique em "Habilitar". Envie os documentos pedidos no edital e aguarde a aprovação do leiloeiro.' },
+  { icone: '🔨', pergunta: 'Como dou um lance?', resposta: 'Estando habilitado e logado, entre na página do lote, informe um valor igual ou acima do próximo lance e confirme. Você é avisado caso alguém supere o seu lance.' },
+  { icone: '💳', pergunta: 'Quais são as formas de pagamento?', resposta: 'As condições (à vista ou parcelado, comissão do leiloeiro e prazos) constam no edital de cada leilão. Leia o edital com atenção antes de dar lances.' },
+  { icone: '📦', pergunta: 'Como retiro o bem que arrematei?', resposta: 'Após a homologação do leilão e a confirmação do pagamento, siga as instruções de retirada informadas no edital e enviadas por e-mail.' },
+];
+
 export default async function AjudaPage(props: { searchParams: Promise<{ busca?: string }> }) {
   const searchParams = await props.searchParams;
   const busca = (searchParams?.busca || '').trim();
@@ -29,7 +39,7 @@ export default async function AjudaPage(props: { searchParams: Promise<{ busca?:
       {/* Hero */}
       <section
         className="relative overflow-hidden px-4 py-14 text-center sm:py-16"
-        style={{ background: 'linear-gradient(135deg, var(--cor-primaria, #15224B) 0%, #27396E 55%, #C8A24B 160%)' }}
+        style={{ background: 'var(--brand-primary)' }}
       >
         <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #fff 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
         <div className="relative mx-auto max-w-2xl">
@@ -96,12 +106,21 @@ export default async function AjudaPage(props: { searchParams: Promise<{ busca?:
               </section>
             )}
 
-            {/* Artigos populares */}
+            {/* Artigos populares (ou FAQ padrão quando o ERP não tem artigos) */}
             <section>
-              <h2 className="mb-4 text-lg font-bold text-gray-800">Artigos populares</h2>
+              <h2 className="mb-4 text-lg font-bold text-gray-800">{artigos.length === 0 ? 'Perguntas frequentes' : 'Artigos populares'}</h2>
               {artigos.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-gray-500">
-                  Ainda não há artigos publicados.
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                  {FAQ_PADRAO.map((f, i) => (
+                    <details key={i} className="group border-b border-gray-100 last:border-b-0">
+                      <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 font-semibold text-gray-800 [&::-webkit-details-marker]:hidden">
+                        <span className="text-lg">{f.icone}</span>
+                        <span>{f.pergunta}</span>
+                        <svg className="ml-auto h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+                      </summary>
+                      <p className="px-5 pb-4 pl-[52px] text-sm leading-relaxed text-gray-600">{f.resposta}</p>
+                    </details>
+                  ))}
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200 bg-white">

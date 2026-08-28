@@ -25,7 +25,7 @@ export default function AjudaBusca({ initial = '' }: { initial?: string }) {
         className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-[15px] text-gray-800 outline-none placeholder:text-gray-400"
         autoComplete="off"
       />
-      <button type="submit" className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110" style={{ background: 'var(--cor-primaria, #15224B)' }}>
+      <button type="submit" className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110" style={{ background: 'var(--brand-primary)' }}>
         Buscar
       </button>
     </form>
