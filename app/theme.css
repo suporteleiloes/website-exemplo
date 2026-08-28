@@ -304,7 +304,7 @@ body:has(.lei-auth--split) main:first-of-type { min-height: 0; }
 
 /* ============ Hero de página interna (Agenda / Leilão / Lote) ============ */
 .lei-page-hero { position: relative; background: var(--brand-primary); overflow: hidden; }
-.lei-page-hero__glow { position: absolute; inset: 0; background: radial-gradient(56% 86% at 84% 6%, rgba(217,185,108,.22), transparent 62%); }
+.lei-page-hero__glow { position: absolute; inset: 0; background: radial-gradient(34% 58% at 88% 4%, rgba(217,185,108,.16), transparent 60%); }
 .lei-page-hero__in { position: relative; max-width: var(--lei-max); margin: 0 auto; padding: 34px 24px 30px; }
 .lei-page-hero__crumb { font-size: 12.5px; color: rgba(255,255,255,.55); }
 .lei-page-hero__crumb a { color: var(--brand-accent); }
