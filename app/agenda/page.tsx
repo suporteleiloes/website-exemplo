@@ -93,7 +93,7 @@ export default async function AgendaPage() {
                 const href = `/leilao/${a.slug || a.id}`;
                 const modalidade = a.tipoLabel || (a.tipo === 1 ? 'Online' : a.tipo === 2 ? 'Presencial' : a.tipo === 3 ? 'Simultâneo' : '');
                 const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                const local = textoLocal(a.local) || (a.tipo === 1 ? '100% Online' : '—');
+                const local = textoLocal(a.local); // vazio quando sem endereço: não mostra nada
                 const codigo = a.codigo || (a.numero ? `${a.numero}${a.ano ? '/' + a.ano : ''}` : String(a.id));
                 const comitente = a.comitentes?.length ? a.comitentes.map((c) => c.nome).join(', ') : (a.titulo || 'Leilão');
                 return (
@@ -112,7 +112,7 @@ export default async function AgendaPage() {
                         {a.judicial && <span className="lei-agenda__mod">Judicial</span>}
                       </div>
                       <div className="lei-agenda__name">{comitente}</div>
-                      <div className="lei-agenda__meta">Leilão {codigo} · {local}</div>
+                      <div className="lei-agenda__meta">Leilão {codigo}{local ? ` · ${local}` : ''}</div>
                     </div>
 
                     <div className="lei-agenda__right">

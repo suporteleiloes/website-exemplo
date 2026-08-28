@@ -47,9 +47,9 @@ export default function LeilaoCard({ leilao, features }: { leilao: Leilao; featu
   const comitenteNome = leilao.comitentes?.find((c) => c.nome && !/^[\d.\-/\s]+$/.test(c.nome))?.nome
     || leilao.comitentes?.[0]?.nome;
   const titulo = comitenteNome || leilao.titulo || 'Leilão';
-  // Local real do leilão: texto do endereço; se online, "100% Online". NÃO cai no apelido do
-  // comitente (dava coisas como "teste").
-  const local = textoLocal(leilao.local) || (leilao.tipo === 1 ? '100% Online' : '');
+  // Local real do leilão (texto do endereço). Sem endereço preenchido não mostra NADA — nem o
+  // ícone, nem "100% Online", nem o apelido do comitente (o bloco abaixo é gated por `local`).
+  const local = textoLocal(leilao.local);
   const codigo = leilao.codigo || (leilao.numero ? `${leilao.numero}${leilao.ano ? '/' + leilao.ano : ''}` : '');
   const nLotes = leilao.totalLotes ?? (MODO_EXEMPLO ? 4 + (Math.abs(leilao.id) * 3) % 40 : null);
   const aPartir = num(leilao, 'valorInicialMenor') ?? num(leilao, 'valorInicial');
@@ -99,16 +99,16 @@ export default function LeilaoCard({ leilao, features }: { leilao: Leilao; featu
         </span>
 
         <div>
+          {(codigo || nLotes != null) && (
+            <div className="lei-leilao__code">
+              {codigo ? `Leilão ${codigo}` : ''}{codigo && nLotes != null ? ' · ' : ''}{nLotes != null ? `${nLotes} ${nLotes === 1 ? 'lote' : 'lotes'}` : ''}
+            </div>
+          )}
           <h3 className="lei-leilao__title">{titulo}</h3>
           {local && (
             <div className="lei-leilao__loc">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--brand-accent-ink)" strokeWidth="1.8" style={{ flex: 'none' }}><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
               <span>{local}</span>
-            </div>
-          )}
-          {(codigo || nLotes != null) && (
-            <div className="lei-leilao__code">
-              {codigo ? `Leilão ${codigo}` : ''}{codigo && nLotes != null ? ' · ' : ''}{nLotes != null ? `${nLotes} ${nLotes === 1 ? 'lote' : 'lotes'}` : ''}
             </div>
           )}
         </div>

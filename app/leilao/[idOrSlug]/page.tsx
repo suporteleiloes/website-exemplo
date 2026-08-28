@@ -115,7 +115,8 @@ export default async function LeilaoPage(
   const pracaLabel = leilao.praca ? `${leilao.praca}º Leilão` : null;
   const auditorio = leilao._urls?.auditorio;
   const temImovel = lista.some((l) => l.bem?.isImovel);
-  const local = textoLocal(leilao.local) || (tipo === 'Online' ? '100% Online' : tipo || '');
+  // Sem endereço preenchido não mostra nada (nem "100% Online" nem o ícone) — o bloco é gated por `local`.
+  const local = textoLocal(leilao.local);
 
   return (
     <main>
