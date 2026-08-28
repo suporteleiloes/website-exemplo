@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { MODO_EXEMPLO } from '@/lib/config';
 import type { SiteConfig, MenuGrupo, SessionUser } from '@/lib/types';
+import UserMenu from '@/components/auth/UserMenu';
 
 // Ícone de martelo (gavel) — porta o SVG do template (dourado, herda --brand-accent).
 function Gavel({ size = 23, color = 'var(--brand-accent)' }: { size?: number; color?: string }) {
@@ -62,7 +63,7 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
 
           {user ? (
             <div className="lei-header__auth">
-              <Link href="/conta" className="lei-btn lei-btn--primary">Olá, {(user.name || 'Conta').split(' ')[0]}</Link>
+              <UserMenu nome={(user.name || user.username || 'Conta').split(' ')[0].split('@')[0]} />
             </div>
           ) : permitirCadastro ? (
             <div className="lei-header__auth">

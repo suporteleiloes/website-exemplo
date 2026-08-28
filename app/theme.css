@@ -827,3 +827,14 @@ body:has(.lei-auth--split) main:first-of-type { min-height: 0; }
   .lei-fc-hero__inner h1 { font-size: 26px; }
   .lei-fc-group { flex-direction: column; gap: 0; }
 }
+
+/* Menu do usuário logado no header — "Olá, X!" + dropdown Meu perfil / Sair. */
+.lei-usermenu { position: relative; }
+.lei-usermenu__name { display: flex; align-items: center; gap: 6px; white-space: nowrap; background: transparent; border: 0; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--brand-primary); cursor: pointer; }
+.lei-usermenu__name span { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.lei-usermenu__drop { position: absolute; top: calc(100% + 10px); right: 0; min-width: 210px; padding: 8px; background: #fff; border: 1px solid #e6e3da; border-radius: 12px; box-shadow: 0 14px 34px -12px rgba(20,33,61,.3); z-index: 90; display: none; }
+.lei-usermenu__drop.is-open { display: block; }
+.lei-usermenu__drop a { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #3c4b4d; }
+.lei-usermenu__drop a:hover { background: #f4f2ec; color: var(--brand-primary); }
+.lei-usermenu__drop a.lei-usermenu__logout { color: #c0392b; }
+.lei-usermenu__drop a.lei-usermenu__logout:hover { background: #fbe9ea; color: #c0392b; }

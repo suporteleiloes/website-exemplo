@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import LogoutButton from '@/components/auth/LogoutButton';
 import { getSessionUser, authFetch } from '@/lib/auth';
 import { moeda } from '@/lib/format';
 import { fotoBem, urlImagem } from '@/lib/img';
@@ -43,7 +42,7 @@ export default async function ContaPage() {
   const docItems: any[] = docs?.result || [];
 
   const nome = me?.pessoa?.nome || user.name || user.username || 'arrematante';
-  const email = user.username || '';
+  const email = me?.pessoa?.email || me?.email || user.username || '';
   const aprovado = me?.aprovado === true;
   const idArr = me?.id ?? '—';
   const roles = (user.roles || []).filter((r: string) => r && r !== 'ROLE_USER').slice(0, 6);
@@ -79,7 +78,6 @@ export default async function ContaPage() {
           </div>
           <div className="lei-conta__hero-acts">
             <Link href="/leiloes" className="lei-conta__cta">Ver leilões abertos <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg></Link>
-            <LogoutButton />
           </div>
         </div>
 
