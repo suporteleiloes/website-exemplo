@@ -5,6 +5,7 @@ import LanceBoxLote from '@/components/LanceBoxLote';
 import HistoricoLances from '@/components/HistoricoLances';
 import ProcessoNum from '@/components/ProcessoNum';
 import LoteTools from '@/components/LoteTools';
+import RegistrarVisita from '@/components/RegistrarVisita';
 import { getLote, getLoteVizinhos, getLeilao, getSiteConfig, ApiException } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
 import { moeda, data as dataBR, hora, dataNoPassado } from '@/lib/format';
@@ -131,6 +132,7 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
 
   return (
     <div className="lei-lote-wrap">
+      <RegistrarVisita loteId={lote.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldProduto }} />
       <div className="lei-lote-crumbrow">
         <div className="lei-lote-crumb">
