@@ -47,7 +47,7 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
         <Link href="/" className="lei-logo" aria-label={nome}>
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt={nome} style={{ height: 46, width: 'auto' }} />
+            <img src={logo} alt={nome} style={{ height: 58, width: 'auto' }} />
           ) : (
             <>
               <span className="lei-logo__mark" style={{ background: 'var(--brand-primary)' }}>
