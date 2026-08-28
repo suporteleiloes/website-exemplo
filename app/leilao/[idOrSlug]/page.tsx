@@ -64,9 +64,15 @@ export default async function LeilaoPage(
 
   const safe = async <T,>(p: Promise<T>, fb: T) => { try { return await p; } catch { return fb; } };
   const empty = { result: [], total: 0, page: 1, limit: 24, pages: 0 };
+  const emptyFiltros = { categorias: [], subcategorias: [], ufs: [], cidades: [], bairros: [], comitentes: [] } as Filtros;
+
+  const aba: Aba = searchParams.aba === 'documentos' ? 'documentos' : searchParams.aba === 'comitentes' ? 'comitentes' : 'lotes';
+  // Só busca lotes/filtros na aba Lotes — nas abas Documentos/Comitentes é fetch desperdiçado
+  // (era isso que deixava a troca de aba lenta em leilões com muitos lotes).
+  const precisaLotes = aba === 'lotes';
   const [lotes, filtros, user] = await Promise.all([
-    safe(getLotes(loteParams), empty as any),
-    safe(getFiltros({ leilao: leilao.id }), { categorias: [], subcategorias: [], ufs: [], cidades: [], bairros: [], comitentes: [] } as Filtros),
+    precisaLotes ? safe(getLotes(loteParams), empty as any) : Promise.resolve(empty as any),
+    precisaLotes ? safe(getFiltros({ leilao: leilao.id }), emptyFiltros) : Promise.resolve(emptyFiltros),
     getSessionUser().catch(() => null),
   ]);
   const lista: Lote[] = lotes.result;
@@ -75,12 +81,20 @@ export default async function LeilaoPage(
   const semFiltro = !searchParams.aba && !searchParams.page && !searchParams.search && !searchParams.categoria
     && !searchParams.status && !searchParams.uf && !searchParams.cidade && !searchParams.comitente
     && !searchParams.valorMinimo && !searchParams.valorMaximo;
-  if (lotes.total === 1 && lista[0] && semFiltro) {
+  if (precisaLotes && lotes.total === 1 && lista[0] && semFiltro) {
     redirect(`/lote/${lista[0].slug || lista[0].id}`);
   }
 
-  const aba: Aba = searchParams.aba === 'documentos' ? 'documentos' : searchParams.aba === 'comitentes' ? 'comitentes' : 'lotes';
-  const comitentes = leilao.comitentes || [];
+  // Comitentes vêm agregados dos lotes e podem repetir — deduplica por id/documento/nome.
+  const comitentesVistos = new Set<string>();
+  const comitentes = (leilao.comitentes || []).filter((c) => {
+    const co = c as { id?: number | string; documento?: string; nome?: string };
+    const chave = String(co.id ?? co.documento ?? co.nome ?? Math.random());
+    if (comitentesVistos.has(chave)) return false;
+    comitentesVistos.add(chave);
+    return true;
+  });
+  const totalLotesLeilao = leilao.totalLotes ?? lotes.total ?? 0;
   const edital = leilao._urls?.edital || null;
   // Documentos só são buscados quando a aba está aberta (evita fetch extra na aba Lotes).
   const docs: DocItem[] = aba === 'documentos'
@@ -120,7 +134,7 @@ export default async function LeilaoPage(
               </div>
               <h1 className="lei-ev-hero__title">{leilao.titulo || `Leilão ${codigo}`}</h1>
               <div className="lei-ev-hero__meta">
-                <span>Leilão nº {codigo}</span>
+                <span>Leilão nº {codigo} · {totalLotesLeilao} {totalLotesLeilao === 1 ? 'lote' : 'lotes'}</span>
                 {datas.map((d, i) => (
                   <span key={i}><b>{i + 1}º leilão</b> {dataCurta(d)}</span>
                 ))}
