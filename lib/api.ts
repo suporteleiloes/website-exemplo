@@ -94,14 +94,14 @@ export const getMenus = () => apiGet<{ result: MenuGrupo[] }>('/site/menus', { r
 export const getBanners = (secao = 'home') => apiGet<{ result: Banner[]; total: number }>('/site/banners', { params: { secao }, revalidate: 60 });
 export const getFiltros = (params?: Params) => apiGet<Filtros>('/buscador/filtros', { params, revalidate: 60 });
 
-// revalidate 0 (sem cache) nas listas de leilão/lote: os contadores (visitas/lances/habilitados)
-// ficam AO VIVO e batem entre o card do leilão e os lotes. O revalidate>0 do OpenNext estava
-// dessincronizando (cada lista revalidava em tempos diferentes → números não fechavam).
-export const getLeiloes = (params?: Params) => apiGet<Paginated<Leilao>>('/leiloes', { params, revalidate: 0 });
-export const getLeilao = (idOrSlug: string | number) => apiGet<Leilao>(`/leiloes/${idOrSlug}`, { revalidate: 0 });
+// Cache de 30s nas listas de leilão/lote: equilibra atualização dos contadores
+// (visitas/lances/habilitados) com carga na API. Mesmo valor nas duas listas p/ manter os
+// números o mais próximos possível entre o card do leilão e os lotes.
+export const getLeiloes = (params?: Params) => apiGet<Paginated<Leilao>>('/leiloes', { params, revalidate: 30 });
+export const getLeilao = (idOrSlug: string | number) => apiGet<Leilao>(`/leiloes/${idOrSlug}`, { revalidate: 30 });
 export const getLeilaoDocumentos = (id: number) => apiGet<{ result: unknown[]; total: number }>(`/leiloes/${id}/documentos`, { revalidate: 60 });
 
-export const getLotes = (params?: Params) => apiGet<Paginated<Lote>>('/lotes', { params, revalidate: 0 });
+export const getLotes = (params?: Params) => apiGet<Paginated<Lote>>('/lotes', { params, revalidate: 30 });
 export const getLote = (idOrSlug: string | number) => apiGet<Lote>(`/lotes/${idOrSlug}`, { revalidate: 10 });
 export const getLancesPublicos = (id: number) => apiGet<{ result: LancePublico[]; total: number }>(`/lotes/${id}/lances-publicos`, { revalidate: 0 });
 

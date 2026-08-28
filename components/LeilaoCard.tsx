@@ -42,8 +42,14 @@ export default function LeilaoCard({ leilao, features }: { leilao: Leilao; featu
   const href = ehExemplo ? '/leiloes' : `/leilao/${leilao.slug || leilao.id}`;
   const aberto = leilao.status === 3 || leilao.status === 4;
   const stCor = aberto ? 'var(--color-success)' : '#8A8A82';
-  const titulo = leilao.comitentes?.[0]?.nome || leilao.titulo || 'Leilão';
-  const local = textoLocal(leilao.local) || leilao.comitentes?.[0]?.apelido || '';
+  // Título = comitente com NOME de verdade (ignora os que são só CNPJ/CPF, ex.: "24.754.392/0001-42");
+  // senão o 1º comitente; senão o título do leilão.
+  const comitenteNome = leilao.comitentes?.find((c) => c.nome && !/^[\d.\-/\s]+$/.test(c.nome))?.nome
+    || leilao.comitentes?.[0]?.nome;
+  const titulo = comitenteNome || leilao.titulo || 'Leilão';
+  // Local real do leilão: texto do endereço; se online, "100% Online". NÃO cai no apelido do
+  // comitente (dava coisas como "teste").
+  const local = textoLocal(leilao.local) || (leilao.tipo === 1 ? '100% Online' : '');
   const codigo = leilao.codigo || (leilao.numero ? `${leilao.numero}${leilao.ano ? '/' + leilao.ano : ''}` : '');
   const nLotes = leilao.totalLotes ?? (MODO_EXEMPLO ? 4 + (Math.abs(leilao.id) * 3) % 40 : null);
   const aPartir = num(leilao, 'valorInicialMenor') ?? num(leilao, 'valorInicial');
