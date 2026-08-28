@@ -21,8 +21,12 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Corta overflow horizontal (evita faixa/espaço em branco no mobile). `clip` não quebra sticky. */
+html { overflow-x: clip; }
+
 body {
   margin: 0;
+  overflow-x: clip;
   background: var(--lei-bg);
   color: var(--lei-ink);
   font-family: Arial, Helvetica, "Liberation Sans", sans-serif;
@@ -858,4 +862,11 @@ body:has(.lei-auth--split) main:first-of-type { min-height: 0; }
 @media (max-width: 860px) {
   .lei-header__right { display: none; }
   .lei-header__mobile { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+}
+
+/* Mobile estreito: form do newsletter e blocos com min-width não estouram a tela. */
+@media (max-width: 560px) {
+  .lei-news-form { min-width: 0; width: 100%; }
+  .lei-footer__news-inner > div { min-width: 0 !important; }
+  .lei-ev-hero__main { min-width: 0; }
 }
