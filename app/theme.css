@@ -838,3 +838,24 @@ body:has(.lei-auth--split) main:first-of-type { min-height: 0; }
 .lei-usermenu__drop a:hover { background: #f4f2ec; color: var(--brand-primary); }
 .lei-usermenu__drop a.lei-usermenu__logout { color: #c0392b; }
 .lei-usermenu__drop a.lei-usermenu__logout:hover { background: #fbe9ea; color: #c0392b; }
+
+/* ===== Menu mobile: hambúrguer + drawer (aparece <= 860px) ===== */
+.lei-header__mobile { display: none; }
+.lei-btn--block { width: 100%; justify-content: center; }
+.lei-burger { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--brand-primary); cursor: pointer; }
+.lei-drawer { position: fixed; inset: 0; z-index: 200; }
+.lei-drawer__bg { position: absolute; inset: 0; background: rgba(10,16,30,.5); animation: lei-fade .15s ease; }
+.lei-drawer__panel { position: absolute; top: 0; right: 0; height: 100%; width: min(84vw, 340px); background: #fff; box-shadow: -14px 0 44px rgba(20,33,61,.28); padding: 16px 20px 24px; display: flex; flex-direction: column; overflow-y: auto; animation: lei-slide .2s ease; }
+.lei-drawer__close { align-self: flex-end; width: 40px; height: 40px; padding: 0; border: 0; background: transparent; font-size: 30px; line-height: 1; color: var(--brand-primary); cursor: pointer; }
+.lei-drawer__nav { display: flex; flex-direction: column; margin-top: 4px; }
+.lei-drawer__nav a { padding: 15px 6px; font-size: 16px; font-weight: 700; color: var(--brand-primary); border-bottom: 1px solid #eee9de; }
+.lei-drawer__nav a:hover { color: var(--brand-accent-ink); }
+.lei-drawer__actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.lei-drawer__login { background: #f4f2ec; color: var(--brand-primary); }
+@keyframes lei-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lei-slide { from { transform: translateX(20px); opacity: .6; } to { transform: translateX(0); opacity: 1; } }
+
+@media (max-width: 860px) {
+  .lei-header__right { display: none; }
+  .lei-header__mobile { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+}

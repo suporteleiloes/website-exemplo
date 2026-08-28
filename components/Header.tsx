@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { MODO_EXEMPLO } from '@/lib/config';
 import type { SiteConfig, MenuGrupo, SessionUser } from '@/lib/types';
 import UserMenu from '@/components/auth/UserMenu';
+import MobileMenu from '@/components/MobileMenu';
 
 // Ícone de martelo (gavel) — porta o SVG do template (dourado, herda --brand-accent).
 function Gavel({ size = 23, color = 'var(--brand-accent)' }: { size?: number; color?: string }) {
@@ -28,6 +29,17 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
   // Itens extras vindos do menu configurável do ERP (além dos fixos do template).
   const extras = (menus.find((m) => m.slug === 'header' || m.slug === 'default')?.itens || []).slice(0, 2);
 
+  // Nav do site — usado no desktop e no drawer mobile (mesma lista).
+  const navItems: { href: string; label: string }[] = [
+    { href: '/leiloes', label: 'Leilões' },
+    ...(f?.agenda !== false ? [{ href: '/agenda', label: 'Agenda' }] : []),
+    { href: '/venda-direta', label: 'Venda Direta' },
+    ...(f?.blog ? [{ href: '/blog', label: 'Blog' }] : []),
+    { href: '/ajuda', label: 'Como participar' },
+    { href: '/contato', label: 'Contato' },
+    ...extras.map((it) => ({ href: it.url || '#', label: it.titulo || '' })),
+  ];
+
   return (
     <header className="lei-header">
       <div className="lei-wrap lei-header__inner">
@@ -50,15 +62,7 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
 
         <div className="lei-header__right">
           <nav className="lei-nav">
-            <Link href="/leiloes">Leilões</Link>
-            {f?.agenda !== false && <Link href="/agenda">Agenda</Link>}
-            <Link href="/venda-direta">Venda Direta</Link>
-            {f?.blog && <Link href="/blog">Blog</Link>}
-            <Link href="/ajuda">Como participar</Link>
-            <Link href="/contato">Contato</Link>
-            {extras.map((it) => (
-              <a key={it.id} href={it.url || '#'}>{it.titulo}</a>
-            ))}
+            {navItems.map((n) => <Link key={n.label} href={n.href}>{n.label}</Link>)}
           </nav>
 
           {user ? (
@@ -77,6 +81,8 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
             </Link>
           )}
         </div>
+
+        <MobileMenu nav={navItems} logado={!!user} permitirCadastro={permitirCadastro} />
       </div>
     </header>
   );
