@@ -1,0 +1,153 @@
+/* ============================================================================
+   /conta — Área do arrematante (dashboard). Mantém header e footer do site.
+   Fontes Sora/Karla carregadas na página. Cores derivadas dos tokens --brand-*
+   do tema (theme.css); cinzas neutros. Sem cores fixas de marca.
+   ============================================================================ */
+.lei-conta {
+  --lc-brand: var(--brand-primary);
+  --lc-brand-hover: var(--brand-secondary);
+  --lc-accent: var(--brand-accent);
+  --lc-accent-ink: var(--brand-accent-ink);
+  --lc-accent-soft: #e8ce8f;
+  --lc-bg: var(--lei-bg);
+  --lc-line: var(--lei-line);
+  --lc-ink: #23262e; --lc-ink-soft: #434750; --lc-muted: #6b6f78; --lc-muted-2: #8a8d95;
+  --lc-green: var(--color-success);
+  --lc-surface: #f7f5f0; --lc-scroll: #dcd8ce;
+  background: var(--lc-bg);
+  font-family: Karla, "Open Sans", sans-serif;
+  color: var(--lc-ink);
+  min-height: 60vh;
+  padding: 40px 28px 64px;
+}
+.lei-conta__wrap { max-width: 1200px; margin: 0 auto; }
+
+/* hero */
+.lei-conta__hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 26px; }
+.lei-conta__hero-acts { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lei-conta__eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lc-brand); }
+.lei-conta__hi { margin: 7px 0 12px; font-family: Sora, sans-serif; font-weight: 600; font-size: 38px; letter-spacing: -0.03em; color: var(--lc-brand); line-height: 1.05; }
+.lei-conta__badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #e8f5ee; color: var(--lc-green); }
+.lei-conta__badge--off { background: #fff6e5; color: #8a5a00; }
+.lei-conta__cta { display: inline-flex; align-items: center; gap: 9px; height: 50px; padding: 0 26px; border-radius: 12px; background: var(--lc-brand); color: #fff; font-family: Sora, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; box-shadow: 0 10px 24px rgba(20, 33, 61, 0.2); transition: background 0.12s, filter 0.12s; }
+.lei-conta__cta:hover { background: var(--lc-brand-hover); color: #fff; }
+
+/* stats */
+.lei-conta__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.lei-conta__stat { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(20, 33, 61, 0.04), 0 12px 30px rgba(20, 33, 61, 0.05); }
+.lei-conta__stat-ic { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; flex: none; }
+.lei-conta__stat-ic--gold { background: rgba(217, 185, 108, 0.18); color: var(--lc-accent-ink); }
+.lei-conta__stat-ic--wine { background: rgba(20, 33, 61, 0.08); color: var(--lc-brand); }
+.lei-conta__stat-ic--green { background: rgba(46, 107, 71, 0.12); color: var(--lc-green); }
+.lei-conta__stat-ic--blue { background: rgba(60, 90, 140, 0.1); color: #3a5a8c; }
+.lei-conta__stat b { display: block; font-family: Sora, sans-serif; font-weight: 700; font-size: 26px; line-height: 1; color: var(--lc-ink); }
+.lei-conta__stat span { font-size: 13px; color: var(--lc-muted); }
+
+/* grid principal */
+.lei-conta__grid { display: grid; grid-template-columns: 360px 1fr; gap: 18px; align-items: stretch; }
+.lei-conta__grid > .lei-card { display: flex; flex-direction: column; }
+/* Favoritos: mostra todos com scroll interno (não corta em 5). max-height define
+   a “janela” do card; o resto rola. padding-right afasta o conteúdo da barra. */
+.lei-conta__grid > .lei-card:last-child .lei-conta__list { flex: 1; max-height: 396px; overflow-y: auto; padding-right: 4px; }
+.lei-conta__list::-webkit-scrollbar { width: 8px; }
+.lei-conta__list::-webkit-scrollbar-thumb { background: var(--lc-scroll); border-radius: 999px; }
+.lei-conta__list::-webkit-scrollbar-track { background: transparent; }
+.lei-conta__col { display: flex; flex-direction: column; gap: 18px; }
+
+.lei-card { background: #fff; border-radius: 18px; padding: 24px 26px; box-shadow: 0 1px 3px rgba(20, 33, 61, 0.04), 0 14px 34px rgba(20, 33, 61, 0.06); }
+.lei-card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.lei-card__h { display: flex; align-items: center; gap: 10px; font-family: Sora, sans-serif; font-weight: 600; font-size: 18px; color: var(--lc-brand); }
+.lei-card__count { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: rgba(217, 185, 108, 0.2); color: var(--lc-accent-ink); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.lei-card__link { font-size: 13.5px; font-weight: 600; color: var(--lc-accent-ink); text-decoration: none; white-space: nowrap; }
+.lei-card__link:hover { text-decoration: underline; }
+
+/* meus dados */
+.lei-conta__me { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--lc-line); }
+.lei-conta__avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--lc-brand); color: var(--lc-accent-soft); display: grid; place-items: center; font-family: Sora, sans-serif; font-weight: 700; font-size: 18px; flex: none; }
+.lei-conta__me-nome { font-family: Sora, sans-serif; font-weight: 600; font-size: 16px; color: var(--lc-ink); }
+.lei-conta__me-mail { font-size: 13px; color: var(--lc-muted); word-break: break-all; }
+.lei-conta__dl { margin: 16px 0 18px; display: flex; flex-direction: column; gap: 12px; }
+.lei-conta__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; }
+.lei-conta__row dt { color: var(--lc-muted); }
+.lei-conta__row dd { margin: 0; font-weight: 700; color: var(--lc-ink); font-variant-numeric: tabular-nums; }
+.lei-conta__chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+.lei-conta__chip { padding: 5px 11px; border-radius: 999px; background: #f0ede6; font-size: 12px; font-weight: 600; color: var(--lc-ink-soft); text-transform: capitalize; }
+/* margin-top:auto fixa o bloco no RODAPÉ do card (o card é flex-column e estica p/ a
+   altura da coluna de favoritos). Mínimo de 18px garantido pelo margin-bottom do dl. */
+.lei-conta__docs { margin-top: auto; padding: 16px 18px; border-radius: 14px; background: #faf9f6; border: 1px solid var(--lc-line); }
+.lei-conta__docs b { font-family: Sora, sans-serif; font-weight: 600; font-size: 14.5px; color: var(--lc-brand); }
+.lei-conta__docs p { margin: 6px 0 10px; font-size: 13px; color: var(--lc-muted); line-height: 1.5; }
+.lei-conta__docs a { font-size: 13.5px; font-weight: 700; color: var(--lc-accent-ink); text-decoration: none; }
+
+/* listas (favoritos, etc.) */
+.lei-conta__list { display: flex; flex-direction: column; }
+.lei-conta__item { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-top: 1px solid var(--lc-line); color: inherit; text-decoration: none; transition: background 0.12s; }
+.lei-conta__item:first-child { border-top: 0; }
+.lei-conta__item:hover { background: var(--lc-surface); margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: 8px; }
+.lei-conta__item-id { font-family: Sora, sans-serif; font-weight: 700; font-size: 14px; color: var(--lc-brand); min-width: 62px; }
+.lei-conta__item-t { flex: 1; font-size: 14px; color: var(--lc-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lei-conta__item-ch { color: var(--lc-muted-2); flex: none; }
+
+/* linha inferior (lances / habilitações / propostas) */
+.lei-conta__bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.lei-conta__empty { text-align: center; padding: 8px 0 4px; }
+.lei-conta__empty-ic { width: 46px; height: 46px; margin: 0 auto 12px; border-radius: 50%; background: #f0ede6; color: var(--lc-muted-2); display: grid; place-items: center; }
+.lei-conta__empty p { margin: 0 0 10px; font-size: 13.5px; color: var(--lc-muted); line-height: 1.5; }
+.lei-conta__empty a { font-size: 14px; font-weight: 700; color: var(--lc-accent-ink); text-decoration: none; }
+/* Habilitações: lista com scroll (mostra várias, rola o resto) + cor por status */
+.lei-conta__hablist { display: flex; flex-direction: column; gap: 10px; max-height: 232px; overflow-y: auto; padding-right: 4px; }
+.lei-conta__hablist::-webkit-scrollbar { width: 8px; }
+.lei-conta__hablist::-webkit-scrollbar-thumb { background: var(--lc-scroll); border-radius: 999px; }
+.lei-conta__hablist::-webkit-scrollbar-track { background: transparent; }
+.lei-conta__hab { padding: 16px 18px; border-radius: 14px; background: #f6faf7; border: 1px solid #e2efe7; }
+.lei-conta__hab--analise { background: #fdf6ec; border-color: #f0e2c8; }
+.lei-conta__hab--analise .lei-conta__hab-tag { color: #b0791b; }
+.lei-conta__hab--analise .lei-conta__hab-tag::before { background: #b0791b; }
+.lei-conta__hab--reprovada { background: #fdf1f1; border-color: #f2d6d6; }
+.lei-conta__hab--reprovada .lei-conta__hab-tag { color: #b3261e; }
+.lei-conta__hab--reprovada .lei-conta__hab-tag::before { background: #b3261e; }
+.lei-conta__hab-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--lc-green); margin-bottom: 8px; }
+.lei-conta__hab-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--lc-green); }
+.lei-conta__hab-nome { font-family: Sora, sans-serif; font-weight: 600; font-size: 15.5px; color: var(--lc-ink); line-height: 1.25; }
+.lei-conta__hab-sub { margin-top: 6px; font-size: 13px; color: var(--lc-muted); }
+.lei-conta__hab-sub a { color: var(--lc-accent-ink); font-weight: 600; text-decoration: none; }
+
+/* botão sair (no header pelo LogoutButton) */
+.lei-conta__logout { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border: 1px solid var(--lc-line); border-radius: 999px; background: #fff; font-size: 14px; font-weight: 600; color: var(--lc-ink-soft); cursor: pointer; }
+.lei-conta__logout:hover { border-color: var(--lc-brand); color: var(--lc-brand); }
+
+@media (max-width: 980px) {
+  .lei-conta__stats { grid-template-columns: 1fr 1fr; }
+  .lei-conta__grid { grid-template-columns: 1fr; }
+  .lei-conta__bottom { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .lei-conta { padding: 26px 16px 44px; }
+  .lei-conta__hi { font-size: 28px; }
+  .lei-conta__stats { grid-template-columns: 1fr; }
+}
+
+/* Empty state alto (favoritos) — fica com altura parecida ao card "Meus dados". */
+.lei-conta__empty--tall { min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.lei-conta__empty strong { font-family: Sora, sans-serif; font-weight: 600; font-size: 16.5px; color: var(--lc-ink); margin-bottom: 2px; }
+.lei-conta__empty--tall p { max-width: 34ch; margin-bottom: 12px; }
+.lei-conta__empty-ic--heart { background: rgba(20, 33, 61, 0.07); color: var(--lc-brand); }
+
+/* favoritos como miniatura horizontal (foto + #id + título + preço·fase) */
+.lei-conta__fav { display: flex; align-items: center; gap: 14px; padding: 11px 8px; text-decoration: none; color: inherit; transition: background 0.12s; border-radius: 12px; }
+.lei-conta__fav + .lei-conta__fav { border-top: 1px solid var(--lc-line); }
+.lei-conta__fav:hover { background: var(--lc-surface); }
+.lei-conta__fav-img { width: 64px; height: 56px; border-radius: 10px; background-color: #e8e4da; background-size: cover; background-position: center; background-repeat: no-repeat; flex: none; }
+.lei-conta__fav-img--none { display: grid; place-items: center; color: var(--lc-muted-2); }
+.lei-conta__fav-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lei-conta__fav-id { font-family: Sora, sans-serif; font-weight: 700; font-size: 12.5px; color: var(--lc-brand); }
+.lei-conta__fav-t { font-size: 14.5px; font-weight: 600; color: var(--lc-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lei-conta__fav-meta { font-size: 13px; color: var(--lc-muted); }
+.lei-conta__fav-ch { color: var(--lc-muted-2); flex: none; }
+
+/* documentos enviados */
+.lei-conta__doclist { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.lei-conta__doc { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 10px; background: #fff; border: 1px solid var(--lc-line); text-decoration: none; color: inherit; }
+.lei-conta__doc:hover { border-color: var(--lc-accent); }
+.lei-conta__doc-ic { width: 30px; height: 30px; border-radius: 7px; background: #f5f2e9; color: var(--lc-accent-ink); display: grid; place-items: center; flex: none; }
+.lei-conta__doc-t { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--lc-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
