@@ -21,12 +21,25 @@ function slugCat(cat: string) { return encodeURIComponent(cat); }
 
 // FAQ padrão — mostrado quando o ERP ainda não tem artigos publicados (fallback neutro,
 // respostas inline via <details>, sem página de detalhe).
-const FAQ_PADRAO: { icone: string; pergunta: string; resposta: string }[] = [
-  { icone: '🚀', pergunta: 'Como faço meu cadastro?', resposta: 'Clique em "Cadastre-se" no topo do site, preencha seus dados (pessoa física ou jurídica) e confirme pelo e-mail que você receber. O cadastro é gratuito.' },
-  { icone: '✅', pergunta: 'Como me habilito para participar de um leilão?', resposta: 'Depois de cadastrado, abra a página do leilão desejado e clique em "Habilitar". Envie os documentos pedidos no edital e aguarde a aprovação do leiloeiro.' },
-  { icone: '🔨', pergunta: 'Como dou um lance?', resposta: 'Estando habilitado e logado, entre na página do lote, informe um valor igual ou acima do próximo lance e confirme. Você é avisado caso alguém supere o seu lance.' },
-  { icone: '💳', pergunta: 'Quais são as formas de pagamento?', resposta: 'As condições (à vista ou parcelado, comissão do leiloeiro e prazos) constam no edital de cada leilão. Leia o edital com atenção antes de dar lances.' },
-  { icone: '📦', pergunta: 'Como retiro o bem que arrematei?', resposta: 'Após a homologação do leilão e a confirmação do pagamento, siga as instruções de retirada informadas no edital e enviadas por e-mail.' },
+const FAQ_PADRAO: { icone: string; pergunta: string; resposta: string; bullets?: string[] }[] = [
+  { icone: '🔨', pergunta: 'Como funcionam os leilões?', resposta: 'O leilão é uma modalidade de venda que permite a disputa de preços entre os interessados: quem oferta o maior lance leva o bem. Pode ocorrer de três formas:', bullets: ['Presencial — realizado em auditório, com a presença do leiloeiro e dos interessados. O leiloeiro anuncia os lotes e o preço mínimo, e os presentes ofertam seus lances.', 'Eletrônico (on-line) — realizado no site do leiloeiro. Para participar, é necessário cadastrar-se e solicitar a habilitação com antecedência.', 'Simultâneo — une o presencial e o eletrônico. Os lances feitos no auditório e os feitos no site são registrados em tempo real, permitindo que todos disputem em igualdade de condições.'] },
+  { icone: '📦', pergunta: 'De onde vêm os bens vendidos em leilão?', resposta: '', bullets: ['Leilão Judicial — determinado por um juiz para ressarcimento de dívida em processo judicial.', 'Leilão Extrajudicial — decorrente de alienação fiduciária, quando há inadimplência no financiamento de um imóvel ou veículo, por exemplo.', 'Leilão Particular — quando uma empresa ou pessoa opta por vender, em leilão, bens que não lhe interessam mais.'] },
+  { icone: '✅', pergunta: 'Preciso me cadastrar para participar?', resposta: 'Sim. O cadastro é rápido e gratuito. Para ofertar lances, é preciso ainda solicitar a habilitação no leilão desejado, aceitando o edital e enviando a documentação exigida.' },
+  { icone: '📄', pergunta: 'O que é o edital e por que devo lê-lo?', resposta: 'O edital é o documento oficial do leilão. Nele estão a descrição dos lotes, o preço mínimo, as condições e prazos de pagamento, a comissão do leiloeiro, as regras de visitação e todas as demais condições da venda. A leitura é essencial antes de dar qualquer lance.' },
+  { icone: '💳', pergunta: 'Existe alguma taxa ou comissão?', resposta: 'Sim. Sobre o valor da arrematação incide a comissão do leiloeiro, no percentual definido no edital de cada leilão (usualmente 5%). Eventuais custos adicionais, quando houver, também constam do edital.' },
+  { icone: '💳', pergunta: 'Como e quando faço o pagamento?', resposta: 'As formas e os prazos de pagamento são os previstos no edital. Após a confirmação do pagamento, o arrematante recebe a documentação e as orientações para a retirada do bem.' },
+  { icone: '📦', pergunta: 'Como retiro o bem arrematado?', resposta: 'A retirada ocorre após a quitação, no local, prazo e condições indicados no edital. O arrematante recebe todas as instruções necessárias.' },
+  { icone: '🔒', pergunta: 'O leilão é seguro?', resposta: 'Sim. O leilão público é conduzido por leiloeiro oficial investido de fé pública, com regras claras e previamente publicadas em edital, garantindo transparência e segurança jurídica a todos os participantes.' },
+  { icone: '⚖️', pergunta: 'O que é arrematação?', resposta: 'É a aquisição do bem por quem ofertou o maior lance, dentro das condições do edital. Concluída e paga, a arrematação constitui negócio perfeito e acabado.' },
+];
+
+// Passos "Como participar" — mostrados junto ao FAQ padrão (sem busca ativa).
+const COMO_PARTICIPAR: { n: string; t: string; d: string }[] = [
+  { n: '1', t: 'Cadastre-se', d: 'Preencha o cadastro on-line com seus dados. Leva poucos minutos.' },
+  { n: '2', t: 'Escolha o leilão', d: 'Navegue pelos leilões abertos e selecione o lote de seu interesse.' },
+  { n: '3', t: 'Solicite a habilitação', d: 'Leia e aceite o edital e as condições de venda e envie a documentação solicitada. A habilitação é analisada e liberada com antecedência.' },
+  { n: '4', t: 'Dê seu lance', d: 'Já habilitado, acompanhe o leilão em tempo real e oferte seus lances em igualdade de condições com os demais participantes.' },
+  { n: '5', t: 'Arremate', d: 'Vencendo a disputa, você recebe as orientações para pagamento e retirada do bem, com toda a segurança jurídica da arrematação.' },
 ];
 
 export default async function AjudaPage(props: { searchParams: Promise<{ busca?: string }> }) {
@@ -106,6 +119,25 @@ export default async function AjudaPage(props: { searchParams: Promise<{ busca?:
               </section>
             )}
 
+            {/* Como participar — passos numerados */}
+            <section className="mb-10">
+              <h2 className="mb-4 text-lg font-bold text-gray-800">Como participar</h2>
+              <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {COMO_PARTICIPAR.map((s) => (
+                  <li key={s.n} className="flex gap-4 rounded-2xl border border-gray-200 bg-white p-5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white" style={{ background: 'var(--brand-primary)' }}>{s.n}</span>
+                    <span className="min-w-0">
+                      <span className="block font-semibold text-gray-800">{s.t}</span>
+                      <span className="mt-0.5 block text-sm leading-relaxed text-gray-500">{s.d}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-relaxed text-amber-900">
+                <b>Importante:</b> leia sempre, com atenção, o edital de cada leilão. Nele constam a descrição dos lotes, o preço mínimo, as condições de pagamento, a comissão do leiloeiro e as demais regras da venda.
+              </div>
+            </section>
+
             {/* Artigos populares (ou FAQ padrão quando o ERP não tem artigos) */}
             <section>
               <h2 className="mb-4 text-lg font-bold text-gray-800">{artigos.length === 0 ? 'Perguntas frequentes' : 'Artigos populares'}</h2>
@@ -118,7 +150,14 @@ export default async function AjudaPage(props: { searchParams: Promise<{ busca?:
                         <span>{f.pergunta}</span>
                         <svg className="ml-auto h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
                       </summary>
-                      <p className="px-5 pb-4 pl-[52px] text-sm leading-relaxed text-gray-600">{f.resposta}</p>
+                      <div className="px-5 pb-4 pl-[52px] text-sm leading-relaxed text-gray-600">
+                        {f.resposta && <p>{f.resposta}</p>}
+                        {f.bullets && (
+                          <ul className={`${f.resposta ? 'mt-2' : ''} list-disc space-y-1.5 pl-5`}>
+                            {f.bullets.map((b, j) => (<li key={j}>{b}</li>))}
+                          </ul>
+                        )}
+                      </div>
                     </details>
                   ))}
                 </div>

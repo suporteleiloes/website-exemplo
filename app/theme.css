@@ -870,3 +870,14 @@ body:has(.lei-auth--split) main:first-of-type { min-height: 0; }
   .lei-footer__news-inner > div { min-width: 0 !important; }
   .lei-ev-hero__main { min-width: 0; }
 }
+
+/* Tipografia de página de conteúdo (Quem somos e afins). */
+.lei-prose { max-width: 860px; margin: 0 auto; color: #3a4150; font-size: 16px; line-height: 1.75; }
+.lei-prose > :first-child { margin-top: 0; }
+.lei-prose h2 { font-size: clamp(21px, 2.4vw, 26px); font-weight: 700; color: var(--brand-primary); margin: 36px 0 12px; letter-spacing: -0.01em; }
+.lei-prose h3 { font-size: 17px; font-weight: 700; color: var(--brand-primary); margin: 26px 0 10px; }
+.lei-prose p { margin: 0 0 15px; }
+.lei-prose ul { margin: 4px 0 20px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.lei-prose ul li { position: relative; padding-left: 24px; }
+.lei-prose ul li::before { content: ''; position: absolute; left: 4px; top: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--brand-accent); }
+.lei-prose strong { color: var(--brand-primary); font-weight: 700; }

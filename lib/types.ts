@@ -225,6 +225,7 @@ export interface SiteConfig {
   hero?: { titulo?: string | null; subtitulo?: string | null };
   // Aba "Website": CSS/JS/metatags injetados no site + site key do reCAPTCHA (nunca o secret).
   customizacao?: { css?: string | null; scripts?: string | null; metas?: string | null; recaptchaSiteKey?: string | null };
+  paginas?: { quemSomos?: string | null };
   seo?: { titleTemplate?: string | null; defaultTitle?: string | null; defaultDescription?: string | null; ogImage?: string | null; indexavel?: boolean };
   realtime?: { url: string | null; clientId: string | null };
   // Rodapé editável (aba "Footer" do modal de Site). Lista de leiloeiros + toggles de links.

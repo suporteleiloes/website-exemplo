@@ -34,6 +34,7 @@ export default function Header({ config, menus, user }: { config: SiteConfig | n
     { href: '/leiloes', label: 'Leilões' },
     ...(f?.agenda !== false ? [{ href: '/agenda', label: 'Agenda' }] : []),
     { href: '/venda-direta', label: 'Venda Direta' },
+    ...(config?.paginas?.quemSomos ? [{ href: '/quem-somos', label: 'Quem somos' }] : []),
     ...(f?.blog ? [{ href: '/blog', label: 'Blog' }] : []),
     { href: '/ajuda', label: 'Como participar' },
     { href: '/contato', label: 'Contato' },

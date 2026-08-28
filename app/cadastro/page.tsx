@@ -71,6 +71,30 @@ export default async function CadastroPage() {
           </div>
         </div>
       </div>
+
+      {/* Seção informativa — o que é o cadastro, dados e documentos */}
+      <section className="mt-8 rounded-2xl border border-gray-200 bg-white p-6 sm:p-8">
+        <h2 className="text-xl font-bold text-gray-800">Cadastro</h2>
+        <p className="mt-2 text-sm leading-relaxed text-gray-600">
+          Para participar dos nossos leilões, realize o seu cadastro. O processo é rápido, gratuito e seus dados são tratados com segurança e confidencialidade, em conformidade com a Lei Geral de Proteção de Dados (LGPD).
+        </p>
+
+        <h3 className="mt-6 text-sm font-bold uppercase tracking-wide text-gray-700">Dados solicitados</h3>
+        <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-gray-600">
+          <li><b>Pessoa Física:</b> nome completo, CPF, RG, data de nascimento, endereço completo, telefone e e-mail.</li>
+          <li><b>Pessoa Jurídica:</b> razão social, CNPJ, endereço completo, dados do representante legal, telefone e e-mail.</li>
+        </ul>
+
+        <h3 className="mt-6 text-sm font-bold uppercase tracking-wide text-gray-700">Documentos para habilitação</h3>
+        <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-gray-600">
+          <li><b>Pessoa Física:</b> documento de identidade com foto, CPF e comprovante de endereço.</li>
+          <li><b>Pessoa Jurídica:</b> contrato social ou cartão CNPJ e documentos do representante legal.</li>
+        </ul>
+
+        <p className="mt-6 border-t border-gray-100 pt-4 text-sm leading-relaxed text-gray-500">
+          Ao concluir o cadastro, o participante declara ter lido e estar de acordo com os editais, as condições de venda e os termos de uso da plataforma.
+        </p>
+      </section>
     </main>
   );
 }
