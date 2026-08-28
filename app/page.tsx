@@ -68,11 +68,15 @@ export default async function Home() {
   // cai nos leilões ATIVOS reais do tenant (status 1,3,4). Assim clicar num card SEMPRE abre um
   // leilão REAL com seus lotes — nunca um card de exemplo (fake) que não existe na API.
   const fonteLeiloes: Leilao[] = futuros.length > 0 ? futuros : (leiloesP.result as Leilao[]);
-  // Destaque "ao vivo" = primeiro leilão aberto/em pregão (status 3/4); senão o próximo da fila.
-  const aoVivo: Leilao | undefined = fonteLeiloes.find((l) => l.status === 3 || l.status === 4)
-    || fonteLeiloes[0]
+  // Destaque "AO VIVO" = leilão em pregão AGORA (status 4) ou com pregão marcado para HOJE.
+  // Um leilão apenas "aberto para lances" com data futura NÃO vai pro hero — aparece só na lista.
+  const ehHoje = (l: Leilao) => {
+    const d = l.dataProximoLeilao ? String(l.dataProximoLeilao).slice(0, 10) : '';
+    return d !== '' && d === hoje;
+  };
+  const aoVivo: Leilao | undefined = fonteLeiloes.find((l) => l.status === 4 || ((l.status === 3 || l.status === 4) && ehHoje(l)))
     || (MODO_EXEMPLO ? { ...leiloesExemplo(50, 1)[0], status: 4, statusLabel: 'Em leilão' } : undefined);
-  const grade: Leilao[] = fonteLeiloes.filter((l) => l.id !== aoVivo?.id);
+  const grade: Leilao[] = aoVivo ? fonteLeiloes.filter((l) => l.id !== aoVivo.id) : fonteLeiloes;
   // Cards reais têm prioridade. Só completa com exemplos se NÃO houver nenhum leilão real.
   const gradeCards: Leilao[] = grade.length > 0
     ? grade.slice(0, 12)
