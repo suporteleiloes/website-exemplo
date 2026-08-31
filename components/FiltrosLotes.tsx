@@ -2,6 +2,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState } from 'react';
 import type { Filtros, FacetItem } from '@/lib/types';
+import { mascaraMoedaBR, moedaParaNumero, reaisParaMascara } from '@/lib/format';
 
 const opt = (f: FacetItem) => ({ id: String(f.id ?? f.value ?? ''), nome: f.nome || f.label || String(f.id ?? f.value) });
 
@@ -16,7 +17,7 @@ export default function FiltrosLotes({ filtros }: { filtros: Filtros }) {
   const [st, setSt] = useState({
     search: get('search'), categoria: get('categoria'), subcategoria: get('subcategoria'),
     uf: get('uf'), cidade: get('cidade'), comitente: get('comitente'),
-    valorMinimo: get('valorMinimo'), valorMaximo: get('valorMaximo'), sortBy: get('sortBy') || 'numero',
+    valorMinimo: reaisParaMascara(get('valorMinimo')), valorMaximo: reaisParaMascara(get('valorMaximo')), sortBy: get('sortBy') || 'numero',
   });
   const set = (k: string, v: string) => setSt((s) => ({ ...s, [k]: v }));
 
@@ -25,7 +26,12 @@ export default function FiltrosLotes({ filtros }: { filtros: Filtros }) {
     const q = new URLSearchParams();
     const leilao = sp.get('leilao');
     if (leilao) q.set('leilao', leilao);
-    Object.entries(st).forEach(([k, v]) => { if (v) q.set(k, v); });
+    Object.entries(st).forEach(([k, v]) => {
+      if (!v) return;
+      // valor vai mascarado no estado ("R$ 1.000,00") → converte p/ número em reais na query.
+      if (k === 'valorMinimo' || k === 'valorMaximo') { const n = moedaParaNumero(v); if (n) q.set(k, n); return; }
+      q.set(k, v);
+    });
     router.push(`${pathname}?${q.toString()}`);
   }
 
@@ -76,11 +82,11 @@ export default function FiltrosLotes({ filtros }: { filtros: Filtros }) {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="label">Valor mín.</label>
-          <input className="input" value={st.valorMinimo} onChange={(e) => set('valorMinimo', e.target.value)} inputMode="numeric" />
+          <input className="input" value={st.valorMinimo} onChange={(e) => set('valorMinimo', mascaraMoedaBR(e.target.value))} inputMode="numeric" placeholder="R$ 0,00" />
         </div>
         <div>
           <label className="label">Valor máx.</label>
-          <input className="input" value={st.valorMaximo} onChange={(e) => set('valorMaximo', e.target.value)} inputMode="numeric" />
+          <input className="input" value={st.valorMaximo} onChange={(e) => set('valorMaximo', mascaraMoedaBR(e.target.value))} inputMode="numeric" placeholder="R$ 0,00" />
         </div>
       </div>
       <div>

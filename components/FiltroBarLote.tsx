@@ -2,6 +2,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState } from 'react';
 import type { Filtros, FacetItem } from '@/lib/types';
+import { mascaraMoedaBR, moedaParaNumero, reaisParaMascara } from '@/lib/format';
 
 const opt = (f: FacetItem) => ({ id: String(f.id ?? f.value ?? ''), nome: f.nome || f.label || String(f.id ?? f.value) });
 
@@ -31,8 +32,9 @@ export default function FiltroBarLote({ filtros, total, totalGeral }: { filtros:
   const [busca, setBusca] = useState(get('search'));
   const [aberto, setAberto] = useState(false);
   const [vista, setVista] = useState<'grade' | 'lista'>('grade');
-  const [vmin, setVmin] = useState(get('valorMinimo'));
-  const [vmax, setVmax] = useState(get('valorMaximo'));
+  // Máscara R$ enquanto digita; inicializa a partir do valor (em reais) que veio na URL.
+  const [vmin, setVmin] = useState(() => reaisParaMascara(get('valorMinimo')));
+  const [vmax, setVmax] = useState(() => reaisParaMascara(get('valorMaximo')));
 
   // Navega mantendo os params atuais, sobrescrevendo os informados (undefined = remove).
   function nav(patch: Record<string, string | undefined>) {
@@ -114,10 +116,10 @@ export default function FiltroBarLote({ filtros, total, totalGeral }: { filtros:
             <div>
               <div className="lei-lf-expand__lbl">Faixa de valor</div>
               <div className="lei-lf-faixa">
-                <input placeholder="R$ mín." value={vmin} onChange={(e) => setVmin(e.target.value)} inputMode="numeric" />
+                <input placeholder="R$ mín." value={vmin} onChange={(e) => setVmin(mascaraMoedaBR(e.target.value))} inputMode="numeric" />
                 <span>—</span>
-                <input placeholder="R$ máx." value={vmax} onChange={(e) => setVmax(e.target.value)} inputMode="numeric" />
-                <button type="button" onClick={() => nav({ valorMinimo: vmin || undefined, valorMaximo: vmax || undefined })}>OK</button>
+                <input placeholder="R$ máx." value={vmax} onChange={(e) => setVmax(mascaraMoedaBR(e.target.value))} inputMode="numeric" />
+                <button type="button" onClick={() => nav({ valorMinimo: moedaParaNumero(vmin) || undefined, valorMaximo: moedaParaNumero(vmax) || undefined })}>OK</button>
               </div>
             </div>
           </div>

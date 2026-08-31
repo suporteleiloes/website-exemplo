@@ -5,6 +5,35 @@ export function moeda(v: number | null | undefined): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+// Máscara de moeda BR "enquanto digita": os dígitos entram como CENTAVOS.
+// "" quando vazio; senão "R$ 1.234,56". Limita a 13 dígitos (até casa dos trilhões).
+export function mascaraMoedaBR(raw: string): string {
+  const dig = String(raw).replace(/\D/g, '').slice(0, 13);
+  if (!dig) return '';
+  return (Number(dig) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// Texto mascarado (ou dígitos) → número em REAIS (string) para enviar à API. "" se vazio.
+export function moedaParaNumero(masked: string): string {
+  const dig = String(masked).replace(/\D/g, '');
+  if (!dig) return '';
+  return String(Number(dig) / 100);
+}
+
+// Número em REAIS (ex.: vindo da URL "1000.5") → texto mascarado "R$ 1.000,50".
+export function reaisParaMascara(v: string | number | null | undefined): string {
+  if (v === null || v === undefined || v === '') return '';
+  const n = Number(v);
+  if (!isFinite(n)) return '';
+  return mascaraMoedaBR(String(Math.round(n * 100)));
+}
+
+// Só dígitos, com limite de tamanho — para campos numéricos (ano, nº) e como barreira de
+// entrada contra lixo/injeção no cliente (a proteção real é a query parametrizada no backend).
+export function soDigitos(raw: string, max = 20): string {
+  return String(raw).replace(/\D/g, '').slice(0, max);
+}
+
 export function dataHora(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);

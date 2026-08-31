@@ -1,6 +1,7 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { soDigitos } from '@/lib/format';
 
 // Filtros da listagem de LEILÕES — só os que a API /leiloes realmente suporta.
 // (UF/cidade/categoria filtram LOTES, não leilões — ver PENDENCIAS-API.md.)
@@ -50,7 +51,7 @@ export default function FiltrosLeiloes() {
       </div>
       <div>
         <label className="label">Ano</label>
-        <input className="input" value={ano} onChange={(e) => setAno(e.target.value)} placeholder="2026" inputMode="numeric" />
+        <input className="input" value={ano} onChange={(e) => setAno(soDigitos(e.target.value, 4))} placeholder="2026" inputMode="numeric" maxLength={4} />
       </div>
       <div>
         <label className="label">Ordenar por</label>

@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { FacetItem } from '@/lib/types';
+import { mascaraMoedaBR, moedaParaNumero, soDigitos } from '@/lib/format';
 
 // Card de busca do hero (Home). Monta a query e leva para /leiloes, como a busca de hoje.
 // Inclui a linha "Mais filtros" (modalidade, comitente, faixa de valor, nº) e "somente com foto".
@@ -26,8 +27,10 @@ export default function HeroBusca({ categorias, ufs, comitentes }: { categorias:
     if (uf) p.set('uf', uf);
     if (mod) p.set('natureza', mod);
     if (com) p.set('comitente', com);
-    if (vmin) p.set('valorMin', vmin);
-    if (vmax) p.set('valorMax', vmax);
+    const vminN = moedaParaNumero(vmin);
+    const vmaxN = moedaParaNumero(vmax);
+    if (vminN) p.set('valorMin', vminN);
+    if (vmaxN) p.set('valorMax', vmaxN);
     if (num) p.set('numero', num);
     if (comFoto) p.set('comFoto', '1');
     const qs = p.toString();
@@ -79,14 +82,14 @@ export default function HeroBusca({ categorias, ufs, comitentes }: { categorias:
           <div className="lei-field">
             <label>Faixa de valor</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-              <input value={vmin} onChange={(e) => setVmin(e.target.value)} placeholder="R$ 0,00" inputMode="numeric" />
+              <input value={vmin} onChange={(e) => setVmin(mascaraMoedaBR(e.target.value))} placeholder="R$ 0,00" inputMode="numeric" />
               <span style={{ fontSize: 13.5, color: '#6b6a63', flex: 'none' }}>até</span>
-              <input value={vmax} onChange={(e) => setVmax(e.target.value)} placeholder="R$ 0,00" inputMode="numeric" />
+              <input value={vmax} onChange={(e) => setVmax(mascaraMoedaBR(e.target.value))} placeholder="R$ 0,00" inputMode="numeric" />
             </div>
           </div>
           <div className="lei-field">
             <label>Nº do lote ou leilão</label>
-            <input value={num} onChange={(e) => setNum(e.target.value)} placeholder="Ex.: 0148 ou 03" />
+            <input value={num} onChange={(e) => setNum(soDigitos(e.target.value, 10))} placeholder="Ex.: 0148 ou 03" inputMode="numeric" />
           </div>
         </div>
       )}
