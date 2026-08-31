@@ -95,7 +95,14 @@ export default async function AgendaPage() {
                 const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 const local = textoLocal(a.local); // vazio quando sem endereço: não mostra nada
                 const codigo = a.codigo || (a.numero ? `${a.numero}${a.ano ? '/' + a.ano : ''}` : String(a.id));
-                const comitente = a.comitentes?.length ? a.comitentes.map((c) => c.nome).join(', ') : (a.titulo || 'Leilão');
+                // Comitentes: dedup por nome e ignora os que são só CNPJ/CPF (ex.: "24.754.392/0001-42").
+                // Sem isso a API devolvia "DETRAN RS" repetido dezenas de vezes. Mostra até 2 + "e mais N".
+                const nomesComitentes = Array.from(new Set(
+                  (a.comitentes || []).map((c) => (c.nome || '').trim()).filter((n) => n && !/^[\d.\-/\s]+$/.test(n)),
+                ));
+                const comitente = nomesComitentes.length
+                  ? (nomesComitentes.length > 2 ? `${nomesComitentes.slice(0, 2).join(', ')} e mais ${nomesComitentes.length - 2}` : nomesComitentes.join(', '))
+                  : (a.titulo || 'Leilão');
                 return (
                   <Link key={a.id} href={href} className="lei-agenda__card">
                     <div className="lei-agenda__date">
