@@ -1,6 +1,7 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { soDigitos } from '@/lib/format';
 
 const SITUACOES = [
   { v: '', label: 'Situação' },
@@ -58,8 +59,8 @@ export default function FiltroBarLeilao({ total }: { total: number }) {
           <select className="lei-lf-sel" value={get('natureza')} onChange={(e) => nav({ natureza: e.target.value || undefined })}>
             {NATUREZAS.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
           </select>
-          <input className="lei-lf-sel" placeholder="Ano (ex.: 2026)" value={ano} inputMode="numeric"
-            onChange={(e) => setAno(e.target.value)}
+          <input className="lei-lf-sel" placeholder="Ano (ex.: 2026)" value={ano} inputMode="numeric" maxLength={4}
+            onChange={(e) => setAno(soDigitos(e.target.value, 4))}
             onKeyDown={(e) => { if (e.key === 'Enter') nav({ ano: ano || undefined }); }}
             onBlur={() => { if (ano !== get('ano')) nav({ ano: ano || undefined }); }} />
         </div>
