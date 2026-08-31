@@ -871,6 +871,15 @@ body:has(.lei-auth--split) main:first-of-type { min-height: 0; }
   .lei-ev-hero__main { min-width: 0; }
 }
 
+/* Footer no mobile: barra final (copyright / selo SSL / links) empilhada e centralizada
+   em vez de espalhada por space-between; selo no topo, links no meio, copyright embaixo. */
+@media (max-width: 600px) {
+  .lei-footer__bar-inner { flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+  .lei-footer__ssl { order: 1; margin: 0 auto; }
+  .lei-footer__bar-inner > span:last-child { order: 2; justify-content: center; }
+  .lei-footer__bar-inner > span:first-child { order: 3; }
+}
+
 /* Tipografia de página de conteúdo (Quem somos e afins). */
 .lei-prose { max-width: 860px; margin: 0 auto; color: #3a4150; font-size: 16px; line-height: 1.75; }
 .lei-prose > :first-child { margin-top: 0; }
