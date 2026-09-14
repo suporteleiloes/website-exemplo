@@ -22,5 +22,20 @@
   ],
   "observability": {
     "enabled": true
+  },
+  // ── Ambientes (modelo homolog/main) ──────────────────────────────────────
+  // Produção = config top-level acima (worker `{site}`, servido no apex + www),
+  //   deploy no push da branch `main`.
+  // Homologação = este env (worker `{site}-homolog`, servido em `homolog.{dominio}`),
+  //   deploy no push da branch `homolog`. Bucket R2 próprio pra não misturar cache.
+  //   Deploy: `npm run deploy:homolog`. Fluxo: testa no homolog → PR homolog→main → prod.
+  "env": {
+    "homolog": {
+      "name": "sl-site-exemplo-homolog",
+      "r2_buckets": [
+        { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "sl-site-exemplo-homolog-cache" }
+      ],
+      "observability": { "enabled": true }
+    }
   }
 }

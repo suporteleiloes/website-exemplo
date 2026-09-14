@@ -1,0 +1,55 @@
+name: Deploy
+
+# Modelo homolog/main (todo site novo nasce com isto):
+#   push na branch `homolog` → deploy do Worker de HOMOLOGAÇÃO ({site}-homolog, em homolog.{dominio})
+#   push na branch `main`    → deploy do Worker de PRODUÇÃO ({site}, no apex + www)
+# Fluxo: desenvolve/testa no homolog → PR homolog→main → produção atualiza sozinha.
+#
+# Trocar por site: NEXT_PUBLIC_TENANT, NEXT_PUBLIC_PAINEL_URL, CF_ZONE_ID.
+# Secret necessário no repo: CLOUDFLARE_API_TOKEN (Workers Scripts:Edit + R2:Edit + Cache Purge).
+
+on:
+  push:
+    branches: [main, homolog]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_API_BASE: https://api-v2.suporteleiloes.com.br
+      NEXT_PUBLIC_TENANT: SUBSTITUIR.com.br
+      NEXT_PUBLIC_WIDGET_SLUG: ""
+      NEXT_PUBLIC_REALTIME_URL: ""
+      NEXT_PUBLIC_PAINEL_URL: https://app.SUBSTITUIR.com.br
+      CF_ZONE_ID: SUBSTITUIR
+      CLOUDFLARE_ACCOUNT_ID: feeae5d875fa439fca0f4e4c7e5b1309
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+
+      - name: Deploy PRODUÇÃO (branch main → apex + www)
+        if: github.ref == 'refs/heads/main'
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy HOMOLOG (branch homolog → homolog.{dominio})
+        if: github.ref == 'refs/heads/homolog'
+        run: npm run deploy:homolog
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Purge Cloudflare cache
+        if: ${{ env.CF_ZONE_ID != 'SUBSTITUIR' }}
+        run: |
+          curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" -d '{"purge_everything":true}' >/dev/null && echo "cache purgado"
