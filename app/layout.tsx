@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './theme.css';
 import Header from '@/components/Header';
+import AuthRouteGate from '@/components/AuthRouteGate';
 import Footer from '@/components/Footer';
 import Messenger from '@/components/Messenger';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
@@ -75,11 +76,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {custom?.metas ? <script dangerouslySetInnerHTML={{ __html: `try{document.head.insertAdjacentHTML('beforeend',${JSON.stringify(custom.metas)})}catch(e){}` }} /> : null}
       </head>
       <body>
-        <Header config={config} menus={menus} user={user} />
+        <AuthRouteGate><Header config={config} menus={menus} user={user} /></AuthRouteGate>
         <main className="min-h-[60vh]">{children}</main>
-        <Footer config={config} leiloeiros={leiloeiros} />
-        <WhatsAppFloat config={config} />
-        {config?.features?.permitirChat !== false && <Messenger slug={WIDGET_SLUG} />}
+        <AuthRouteGate>
+          <Footer config={config} leiloeiros={leiloeiros} />
+          <WhatsAppFloat config={config} />
+          {config?.features?.permitirChat !== false && <Messenger slug={WIDGET_SLUG} />}
+        </AuthRouteGate>
         {custom?.scripts ? <script dangerouslySetInnerHTML={{ __html: custom.scripts }} /> : null}
       </body>
     </html>

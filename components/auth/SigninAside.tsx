@@ -5,8 +5,10 @@ import type { SiteConfig } from '@/lib/types';
 // Painel esquerdo (navy) da tela de login — porta o AuthAside do kleiloes, tema do template.
 export default function SigninAside({ config }: { config?: SiteConfig | null }) {
   const nome = MODO_EXEMPLO ? 'WEBSITE EXEMPLO' : (config?.siteName || 'Leilões');
-  // Fundo navy: usa a logo clara do rodapé se houver; senão mostra o nome (branco, sempre visível).
-  const logoLight = MODO_EXEMPLO ? null : (config?.footer?.logo || null);
+  // Fundo navy: prioriza a logo clara (rodapé) do config; cai no /logo.png do site;
+  // sem nenhuma, mostra o nome (branco, sempre visível). No modo exemplo, sem /logo.png,
+  // usa só o config (se houver) e senão o nome — evita imagem quebrada.
+  const logoLight = config?.footer?.logo || config?.logo?.horizontal || (MODO_EXEMPLO ? null : '/logo.png');
   return (
     <aside className="lei-signin__aside">
       <Link href="/" className="lei-signin__brand" aria-label={nome}>
