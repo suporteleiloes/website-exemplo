@@ -54,7 +54,8 @@ export default async function Home() {
     // "Leilões" = os próximos que VÃO acontecer (padrão kleiloes): status 1,3,4, sem venda direta,
     // ordenados pela próxima data. O corte "hoje/futuro" é aplicado abaixo.
     safe(getLeiloes({ status: '1,3,4', vendaDireta: false, somenteAtivos: true, sortBy: 'dataProximoLeilao', order: 'asc', limit: 24 }), emptyP),
-    safe(getLotes({ destaque: true, somenteAtivos: true, limit: 8 }), emptyP),
+    // "Lotes em destaque" = SÓ abertos para lance (leilão aberto/ao vivo 3,4 + lote aberto), nunca vendido/encerrado.
+    safe(getLotes({ destaque: true, leilaoStatus: '3,4', status: 1, somenteAtivos: true, limit: 8 }), emptyP),
     // Contagem de lotes DISPONÍVEIS (abertos em leilões ativos) — igual ao "disponíveis" do kleiloes.
     safe(getLotes({ leilaoStatus: '1,3,4', somenteAtivos: true, status: 1, limit: 1 }), emptyP),
   ]);
