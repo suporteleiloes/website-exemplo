@@ -82,7 +82,14 @@ export default async function Home() {
   const gradeCards: Leilao[] = grade.length > 0
     ? grade.slice(0, 12)
     : (MODO_EXEMPLO ? leiloesExemplo(0, 12) : []);
-  const destaques: Lote[] = lotesDestaque.result;
+  // Destaques só de leilões que AINDA NÃO ocorreram (data do leilão hoje/futura) — evita mostrar
+  // lote "aberto" preso em leilão de data vencida (status não atualizado no ERP).
+  const hojeDest = new Date().toISOString().slice(0, 10);
+  const destaques: Lote[] = (lotesDestaque.result as Lote[]).filter((lt) => {
+    const lz = (lt as { leilao?: { dataProximoLeilao?: string | null } }).leilao;
+    const d = String(lz?.dataProximoLeilao || '').slice(0, 10);
+    return d !== '' && d >= hojeDest;
+  });
   const features = config?.features; // flags do ERP (liveHome, destaquesHome, mostrar*, etc.)
   // Textos do hero: usa o que o leiloeiro configurou no ERP; vazio = texto padrão do template.
   const heroTitulo = config?.hero?.titulo?.trim() || '';
