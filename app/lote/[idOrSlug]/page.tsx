@@ -71,7 +71,7 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
     : encerraReal;
   const titulo = bem?.siteTitulo || nomeRef(bem?.tipo) || `Lote ${lote.numeroString || lote.numero}`;
   const loc = bem?.localizacao;
-  const urlEvento = `/leilao/${leilao?.slug || leilaoId}`;
+  const urlEvento = `/leilao/${leilao?.slug ? `${leilaoId}-${leilao.slug}` : leilaoId}`;
   const fotos = (bem?.fotos || []).map((f) => f.url || f.min || f.thumb).filter(Boolean) as string[];
   if (!fotos.length) { const cap = urlImagem(bem?.image, 'full'); if (cap) fotos.push(cap); }
   const comitente = bem?.comitente?.nome || null;

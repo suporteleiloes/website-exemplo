@@ -90,7 +90,7 @@ export default async function AgendaPage() {
             <div className="lei-agenda__list">
               {g.itens.map(({ leilao: a, d }) => {
                 const cor = statusCor(a.status);
-                const href = `/leilao/${a.slug || a.id}`;
+                const href = `/leilao/${a.slug ? `${a.id}-${a.slug}` : a.id}`;
                 const modalidade = a.tipoLabel || (a.tipo === 1 ? 'Online' : a.tipo === 2 ? 'Presencial' : a.tipo === 3 ? 'Simultâneo' : '');
                 const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 const local = textoLocal(a.local); // vazio quando sem endereço: não mostra nada

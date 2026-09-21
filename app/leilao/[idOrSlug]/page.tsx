@@ -14,13 +14,13 @@ import type { Filtros, Leilao, Lote, Imagem } from '@/lib/types';
 // SEO por leilão: título = título do leilão; descrição com nº de lotes e modalidade.
 export async function generateMetadata(props: { params: Promise<{ idOrSlug: string }> }): Promise<Metadata> {
   const params = await props.params;
-  const leilao = await getLeilao(params.idOrSlug).catch(() => null);
+  const leilao = await getLeilao(params.idOrSlug.replace(/^(\d+)-.*/s, '$1')).catch(() => null);
   if (!leilao) return { title: 'Leilão' };
   const cod = leilao.codigo || (leilao.numero ? `${leilao.numero}${leilao.ano ? '/' + leilao.ano : ''}` : '');
   const titulo = leilao.titulo || `Leilão ${cod}`;
   const nat = leilao.vendaDireta ? 'Venda direta' : leilao.judicial ? 'Leilão judicial' : 'Leilão extrajudicial';
   const desc = `${nat}${cod ? ` nº ${cod}` : ''}${leilao.totalLotes ? ` · ${leilao.totalLotes} lotes` : ''}. ${leilao.descricao || 'Participe online.'}`.trim();
-  return pageMeta({ title: titulo, description: desc.slice(0, 300), path: `/leilao/${leilao.slug || leilao.id}`, image: fotoLeilao(leilao) });
+  return pageMeta({ title: titulo, description: desc.slice(0, 300), path: `/leilao/${leilao.slug ? `${leilao.id}-${leilao.slug}` : leilao.id}`, image: fotoLeilao(leilao) });
 }
 
 type Aba = 'lotes' | 'documentos' | 'comitentes';
@@ -52,7 +52,7 @@ export default async function LeilaoPage(
   const searchParams = await props.searchParams;
   const params = await props.params;
   let leilao: Leilao;
-  try { leilao = await getLeilao(params.idOrSlug); }
+  try { leilao = await getLeilao(params.idOrSlug.replace(/^(\d+)-.*/s, '$1')); }
   catch (e) { if (e instanceof ApiException && e.status === 404) notFound(); throw e; }
 
   const loteParams: Record<string, string | number | undefined> = {

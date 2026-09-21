@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let leiloes: Leilao[] = [];
   try { leiloes = (await getLeiloes({ limit: 500, sortBy: 'dataProximoLeilao', order: 'desc' })).result; } catch { /* segue com estáticas */ }
   const dinamicas: MetadataRoute.Sitemap = leiloes.map((l) => ({
-    url: `${SITE_URL}/leilao/${l.slug || l.id}`,
+    url: `${SITE_URL}/leilao/${l.slug ? `${l.id}-${l.slug}` : l.id}`,
     changeFrequency: 'hourly',
     priority: 0.8,
   }));

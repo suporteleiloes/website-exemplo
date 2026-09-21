@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 // URLs de lote/leilão seguem a convenção do site (slug com fallback pro id).
 const hrefLote = (l: { id: number | string; slug?: string | null }) => `/lote/${l.slug || l.id}`;
-const hrefLeilao = (l: { id: number | string; slug?: string | null }) => `/leilao/${l.slug || l.id}`;
+const hrefLeilao = (l: { id: number | string; slug?: string | null }) => `/leilao/${l.slug ? `${l.id}-${l.slug}` : l.id}`;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 async function getJson(path: string): Promise<any | null> {

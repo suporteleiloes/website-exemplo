@@ -39,7 +39,7 @@ export default function LeilaoCard({ leilao, features }: { leilao: Leilao; featu
   // Leilões de EXEMPLO (MODO_EXEMPLO) têm id negativo e slug `exemplo-N`, que não existe na API.
   // Clicar num card de exemplo leva à lista de leilões reais em vez de 404 no detalhe.
   const ehExemplo = leilao.id < 0;
-  const href = ehExemplo ? '/leiloes' : `/leilao/${leilao.slug || leilao.id}`;
+  const href = ehExemplo ? '/leiloes' : `/leilao/${leilao.slug ? `${leilao.id}-${leilao.slug}` : leilao.id}`;
   const aberto = leilao.status === 3 || leilao.status === 4;
   const stCor = aberto ? 'var(--color-success)' : '#8A8A82';
   // Título = comitente com NOME de verdade (ignora os que são só CNPJ/CPF, ex.: "24.754.392/0001-42");

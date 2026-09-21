@@ -9,7 +9,7 @@ export default function LeilaoAoVivo({ leilao }: { leilao: Leilao }) {
   const titulo = leilao.comitentes?.[0]?.nome || leilao.titulo || 'Leilão';
   const aoVivo = leilao.status === 4;
   // Leilão de EXEMPLO (id negativo) não existe na API → aponta pra lista real em vez de 404.
-  const href = leilao.id < 0 ? '/leiloes' : `/leilao/${leilao.slug || leilao.id}`;
+  const href = leilao.id < 0 ? '/leiloes' : `/leilao/${leilao.slug ? `${leilao.id}-${leilao.slug}` : leilao.id}`;
   const nLotes = leilao.totalLotes ?? 0;
 
   return (
