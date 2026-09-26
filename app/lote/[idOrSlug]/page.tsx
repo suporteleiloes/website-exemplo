@@ -204,6 +204,23 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
           <div className="lei-lote-card">
             <h2>Formas de pagamento</h2>
             <div className="lei-lote-info lei-lote-info--center"><div className="lei-lote-info__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 12h.01M18 12h.01" /></svg></div><div><div className="lei-lote-info__tt">À vista</div></div></div>
+            {(() => {
+              // Parcelamento: lote > leilão (o que estiver configurado). A API expõe
+              // permitirParcelamento / parcelamentoQtdParcelas / parcelamentoMinimoEntrada.
+              const permite = lote.permitirParcelamento ?? (leilao as { permitirParcelamento?: boolean | null } | undefined)?.permitirParcelamento;
+              const qtd = lote.parcelamentoQtdParcelas ?? (leilao as { parcelamentoQtdParcelas?: number | null } | undefined)?.parcelamentoQtdParcelas;
+              const entrada = lote.parcelamentoMinimoEntrada ?? (leilao as { parcelamentoMinimoEntrada?: number | null } | undefined)?.parcelamentoMinimoEntrada;
+              if (!permite) return null;
+              return (
+                <div className="lei-lote-info lei-lote-info--center" style={{ marginTop: 10 }}>
+                  <div className="lei-lote-info__ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h4" /></svg></div>
+                  <div>
+                    <div className="lei-lote-info__tt">Parcelável{qtd ? ` em até ${qtd}x` : ''}</div>
+                    {entrada != null && <div className="lei-lote-info__tx">Entrada mínima de {entrada}%</div>}
+                  </div>
+                </div>
+              );
+            })()}
             {leilao?.infoPagamento && <p className="lei-lote-info__tx" style={{ marginTop: 6 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(leilao.infoPagamento) }} />}
           </div>
 
