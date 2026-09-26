@@ -166,6 +166,8 @@ export interface Lote {
   valorLanceAtual: number | null;
   totalLances: number | null;
   permitirParcelamento: boolean | null;
+  parcelamentoQtdParcelas: number | null;
+  parcelamentoMinimoEntrada: number | null;
   videos: string[];
   leilao: Leilao | LeilaoMin;
   bem: Bem | null;

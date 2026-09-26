@@ -26,6 +26,9 @@ function paramsFromSearch(sp: SP) {
   if (sp.natureza === 'judicial') p.judicial = true;
   else if (sp.natureza === 'extrajudicial') p.extrajudicial = true;
   else if (sp.natureza === 'vendaDireta') p.vendaDireta = true;
+  // /leiloes é só LEILÃO (judicial/extrajudicial). Venda direta fica na /venda-direta (e na home).
+  // Sem filtro explícito de natureza=vendaDireta, exclui venda direta da listagem de leilões.
+  else p.vendaDireta = false;
   return p;
 }
 
