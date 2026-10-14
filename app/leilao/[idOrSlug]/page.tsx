@@ -223,6 +223,28 @@ export default async function LeilaoPage(
           )
         ) : (
           <>
+            {(() => {
+              // Observações e demais informações do leilão (a API V2 expõe estes campos).
+              const infos = [
+                { label: 'Descrição', valor: leilao.descricao },
+                { label: 'Observações', valor: leilao.observacao },
+                { label: 'Visitação', valor: leilao.infoVisitacao },
+                { label: 'Retirada', valor: leilao.infoRetirada },
+                { label: 'Pagamento', valor: leilao.infoPagamento },
+              ].filter((i) => i.valor && String(i.valor).trim());
+              return infos.length > 0 ? (
+                <div className="lei-ev-panel" style={{ marginBottom: 20 }}>
+                  <h2 className="lei-ev-panel__h2">Informações do leilão</h2>
+                  {infos.map((i) => (
+                    <div key={i.label} style={{ marginBottom: 16 }}>
+                      <div className="lei-ev-doc__txt"><b>{i.label}</b></div>
+                      <p className="lei-ev-panel__vazio" style={{ whiteSpace: 'pre-line', marginTop: 4 }}>{i.valor}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+
             <FiltroBarLote filtros={filtros} total={lotes.total} totalGeral={leilao.totalLotes ?? lotes.total} />
 
             {lista.length === 0 ? (
