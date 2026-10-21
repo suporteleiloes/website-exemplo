@@ -39,7 +39,7 @@ const COMO_PARTICIPAR: { n: string; t: string; d: string }[] = [
   { n: '2', t: 'Escolha o leilão', d: 'Navegue pelos leilões abertos e selecione o lote de seu interesse.' },
   { n: '3', t: 'Solicite a habilitação', d: 'Leia e aceite o edital e as condições de venda e envie a documentação solicitada. A habilitação é analisada e liberada com antecedência.' },
   { n: '4', t: 'Dê seu lance', d: 'Já habilitado, acompanhe o leilão em tempo real e oferte seus lances em igualdade de condições com os demais participantes.' },
-  { n: '5', t: 'Arremate', d: 'Vencendo a disputa, você recebe as orientações para pagamento e retirada do bem, com toda a segurança jurídica da arrematação.' },
+  { n: '5', t: 'Arremate, pague e retire', d: 'Vencendo a disputa, você recebe a nota de arrematação e as orientações de pagamento. Pague o valor do lote mais a comissão no prazo do edital e agende a retirada do bem no local indicado, com toda a segurança jurídica da arrematação.' },
 ];
 
 export default async function AjudaPage(props: { searchParams: Promise<{ busca?: string }> }) {

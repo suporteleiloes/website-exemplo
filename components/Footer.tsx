@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { MODO_EXEMPLO } from '@/lib/config';
 import type { SiteConfig, Leiloeiro } from '@/lib/types';
+import { UNIDADES, mapsQueryUnidade, telHrefUnidade } from '@/lib/unidades';
 
 function Gavel() {
   return (
@@ -19,6 +20,12 @@ const ICON = {
   instagram: (<><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="1.9" /><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="1.9" /><circle cx="17.5" cy="6.5" r="1.1" /></>),
   whatsapp: (<path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12z" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />),
 } as const;
+
+// Ícones dos contatos (reutilizados nos blocos de unidade do rodapé).
+const stroke = 'rgba(255,255,255,.55)';
+const IcoPin = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>);
+const IcoTel = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.6a2 2 0 0 1-.5 2.1L8.1 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.8.3 1.7.6 2.6.7a2 2 0 0 1 1.7 2z" /></svg>);
+const IcoMail = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M2 7l10 6 10-6" /></svg>);
 
 // Endereço a partir do Record livre de config.endereco (campos podem vir null).
 // Devolve DUAS linhas (rua/num · cidade-uf · cep) como no template.
@@ -66,9 +73,14 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
   const telHref = `tel:${telefone.replace(/[^\d+]/g, '')}`;
   const mailHref = `mailto:${email}`;
 
-  // Prioridade: lista editada na aba "Footer" → leiloeiro(s) do ERP → placeholders do template.
+  // Unidades fixas (ex.: Lance Certo tem Recife e Natal). Vazio → contato único do config.
+  const temUnidades = !MODO_EXEMPLO && UNIDADES.length > 0;
+
+  // Prioridade: unidades fixas → lista editada na aba "Footer" → leiloeiro(s) do ERP → placeholders.
   const leiloeirosCfg = (!MODO_EXEMPLO && fCfg?.leiloeiros && fCfg.leiloeiros.length > 0) ? fCfg.leiloeiros : null;
-  const fonteLeiloeiros = leiloeirosCfg ?? (leiloeiros.length > 0 ? leiloeiros : null);
+  const fonteLeiloeiros = temUnidades
+    ? UNIDADES.map((u) => ({ nome: u.leiloeiro || 'Leiloeiro Oficial', matricula: u.registro || '' }))
+    : (leiloeirosCfg ?? (leiloeiros.length > 0 ? leiloeiros : null));
   const listaLeiloeiros = fonteLeiloeiros
     ? fonteLeiloeiros.map((l) => ({ nome: l.nome || 'Leiloeiro Oficial', matricula: l.matricula || '0000' }))
     : [
@@ -169,23 +181,54 @@ export default function Footer({ config, leiloeiros = [] }: { config: SiteConfig
         <div>
           <div className="lei-footer__coltitle">Atendimento</div>
           <div className="lei-footer__links" style={{ gap: 15 }}>
+            {temUnidades ? (
+              UNIDADES.map((u, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  <div className="lei-footer__label" style={{ marginBottom: 1 }}>{u.cidade} — {u.uf}</div>
+                  {(u.leiloeiro || u.registro) && (
+                    <span className="lei-footer__leiloeiro" style={{ fontSize: 12.5 }}>
+                      {u.leiloeiro}{u.leiloeiro && u.registro ? ' ' : ''}{u.registro && <b>{u.registro}</b>}
+                    </span>
+                  )}
+                  <a className="lei-footer__contact" href={`https://www.google.com/maps/search/?api=1&query=${mapsQueryUnidade(u)}`} target="_blank" rel="noopener noreferrer">
+                    <IcoPin />
+                    <span>{u.enderecoL1}<br />{u.enderecoL2}</span>
+                  </a>
+                  {u.telefones.map((t) => (
+                    <a key={t} className="lei-footer__contact" href={telHrefUnidade(t)}>
+                      <IcoTel />
+                      <span>{t}</span>
+                    </a>
+                  ))}
+                  {u.email && (
+                    <a className="lei-footer__contact" href={`mailto:${u.email}`}>
+                      <IcoMail />
+                      <span>{u.email}</span>
+                    </a>
+                  )}
+                </div>
+              ))
+            ) : (
+            <>
             {temEndereco && (
             <a className="lei-footer__contact" href={mapsHref} target="_blank" rel="noopener noreferrer">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
+              <IcoPin />
               <span>{endL1}{endL1 && endL2 && <br />}{endL2}</span>
             </a>
             )}
             {telefone && (
             <a className="lei-footer__contact" href={telHref}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.6a2 2 0 0 1-.5 2.1L8.1 9.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.8.3 1.7.6 2.6.7a2 2 0 0 1 1.7 2z" /></svg>
+              <IcoTel />
               <span>{telefone}</span>
             </a>
             )}
             {email && (
             <a className="lei-footer__contact" href={mailHref}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 3 }}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M2 7l10 6 10-6" /></svg>
+              <IcoMail />
               <span>{email}</span>
             </a>
+            )}
+            </>
             )}
             {horario && (
             <div className="lei-footer__contact">
