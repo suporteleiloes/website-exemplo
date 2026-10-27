@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   const res = await fetch(`${API_BASE}/api/auth`, {
     method: 'POST',
-    headers: { [TENANT_HEADER]: TENANT, 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { [TENANT_HEADER]: TENANT, 'Content-Type': 'application/json', Accept: 'application/json', ...ipDoVisitante(req) },
     body: JSON.stringify({ user: body.user, pass: body.pass }),
     cache: 'no-store',
   });
@@ -37,4 +37,13 @@ export async function POST(req: NextRequest) {
     out.cookies.set(REFRESH_COOKIE, data.refreshToken, { ...cookieBase, maxAge: maxAgeFromTimestamp(data.refreshExpires, 60 * 60 * 24 * 30) });
   }
   return out;
+}
+
+// IP real do visitante p/ o rate limit do login. Este login roda no SERVIDOR do site (Worker):
+// sem o header a API vê o IP do Worker — o mesmo p/ todos os visitantes — e o limite por IP
+// (50/5min) vira global, bloqueando logins legítimos em pico. A API só aceita X-Visitor-IP
+// vindo da rede da Cloudflare. Ver GUIA-WEBSITE-V2 §2.
+function ipDoVisitante(req: Request): Record<string, string> {
+  const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  return ip ? { 'X-Visitor-IP': ip } : {};
 }
