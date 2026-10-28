@@ -100,6 +100,10 @@ export default async function LotePage(props: { params: Promise<{ idOrSlug: stri
   if (bem?.areaTerreno) specs.push({ k: 'Área do terreno', v: fmtArea(bem.areaTerreno) });
   if (bem?.areaEdificada) specs.push({ k: 'Área edificada', v: fmtArea(bem.areaEdificada) });
   if (bem?.identificador) specs.push({ k: bem?.isImovel ? 'Matrícula' : 'Identificador', v: bem.identificador });
+  // Campos extras do bem (marcados como "Público (site)" no ERP) — entram na ficha como linhas k/v.
+  for (const c of bem?.camposExtras ?? []) {
+    if (c?.nome && c?.valor != null && String(c.valor).trim() !== '') specs.push({ k: c.nome, v: String(c.valor) });
+  }
 
   const enderecoLinha = loc && (loc.endereco || loc.cidade)
     ? `${loc.endereco || ''}${loc.numero ? ' ' + loc.numero : ''}${loc.bairro ? ', ' + loc.bairro : ''}${loc.cidade ? ', ' + loc.cidade : ''}${loc.uf ? ' - ' + loc.uf : ''}${loc.cep ? '. CEP ' + loc.cep : ''}`

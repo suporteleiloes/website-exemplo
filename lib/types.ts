@@ -83,6 +83,8 @@ export interface Bem {
   siteSubtitulo: string | null;
   siteDescricao: string | null;
   siteObservacao: string | null;
+  // Campos extras (campos personalizados do bem marcados como "Público (site)" no ERP).
+  camposExtras?: { codigo?: string | null; nome: string; valor: string }[];
   image: Imagem | null;
   fotos: Foto[];
   videos: string[];
