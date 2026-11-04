@@ -2,13 +2,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface VersaoCadastro { versao?: number; permitirEstrangeiros?: boolean; bloquearCadPj?: boolean }
+interface VersaoCadastro { versao?: number; permitirEstrangeiros?: boolean; bloquearCadPj?: boolean; exigirDocsCadastro?: boolean | string | number }
 
 // Cadastro completo de arrematante → POST /api/auth/cadastro (BFF) →
 // POST /api/public/arrematantes/cadastro (V1). Sucesso devolve JWT e já loga.
 export default function CadastroForm({ versao }: { versao: VersaoCadastro | null }) {
   const router = useRouter();
   // A API devolve flags como STRING ("0"/"1"). `!"0"` é false em JS — trate explicitamente.
+  const exigeDocs = String(versao?.exigirDocsCadastro) === '1' || versao?.exigirDocsCadastro === true;
   const podePj = !(versao?.bloquearCadPj === true || String(versao?.bloquearCadPj) === '1');
   const [tipo, setTipo] = useState<1 | 2>(1); // 1=PF, 2=PJ
   const [f, setF] = useState({
@@ -68,6 +69,8 @@ export default function CadastroForm({ versao }: { versao: VersaoCadastro | null
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErro(primeiraMsg(d?.message) || 'Não foi possível concluir o cadastro.'); return; }
+      // Documentos são enviados no painel: vai já logado, via handoff SSO.
+      if (exigeDocs) { window.location.href = '/api/sso/handoff?redirect=/perfil/documentos'; return; }
       router.push('/conta');
       router.refresh();
     } catch {

@@ -121,6 +121,7 @@ export default async function ContaPage() {
               ) : (
                 <p>Mantenha seus documentos atualizados para agilizar novas habilitações.</p>
               )}
+              <a href="/api/sso/handoff?redirect=/perfil/documentos" className="lei-conta__cta">Enviar ou regularizar documentos</a>
             </div>
           </div>
 

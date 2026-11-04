@@ -30,3 +30,6 @@ export const MODO_EXEMPLO = process.env.NEXT_PUBLIC_MODO_EXEMPLO === 'true';
 // Cookies httpOnly do BFF — nunca expostos ao browser.
 export const JWT_COOKIE = 'sl_jwt';        // access token (JWT, 24h)
 export const REFRESH_COOKIE = 'sl_refresh'; // refresh token (opaco, 30 dias)
+
+// Painel do arrematante = app-cliente (app.<dominio>). NUNCA o arrematante legado.
+export const PAINEL_URL = (process.env.NEXT_PUBLIC_PAINEL_URL || '').replace(/\/$/, '');
