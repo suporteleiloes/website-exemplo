@@ -69,7 +69,7 @@ export default function LoteCard({ lote, compact = false }: { lote: Lote; compac
         <div className="lei-lote__prices">
           <div className="lei-lote__pcol">
             <span className="lei-lote__rlbl">Lance inicial</span>
-            <span className="lei-lote__pval">{moeda(lote.valorInicial)}</span>
+            <span className="lei-lote__pval">{moeda(lote.valorInicialAtual ?? lote.valorInicial)}</span>
           </div>
           {temLanceAtual && (
             <div className="lei-lote__pcol">

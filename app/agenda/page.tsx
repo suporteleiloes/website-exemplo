@@ -16,8 +16,19 @@ function statusCor(status: number): string {
   return '#8A8880';
 }
 
-interface Item { leilao: Leilao; d: Date }
+interface SpParts { year: number; month: number; day: number; hour: string; minute: string }
+interface Item { leilao: Leilao; p: SpParts }
 interface Grupo { key: string; mes: string; qtd: number; itens: Item[] }
+
+// Partes de data no fuso America/Sao_Paulo — o runtime do Worker é UTC, então ler
+// d.getDate()/getHours() direto mostrava +3h (dia/hora errados).
+function spParts(d: Date): SpParts {
+  const m = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(d).reduce((a, x) => { a[x.type] = x.value; return a; }, {} as Record<string, string>);
+  return { year: Number(m.year), month: Number(m.month), day: Number(m.day), hour: m.hour, minute: m.minute };
+}
 
 export default async function AgendaPage() {
   let leiloes: Leilao[] = [];
@@ -34,14 +45,15 @@ export default async function AgendaPage() {
     if (!iso) continue;
     const d = new Date(iso);
     if (isNaN(d.getTime())) continue;
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const p = spParts(d);
+    const key = `${p.year}-${p.month}`;
     let g = idx.get(key);
     if (!g) {
-      g = { key, mes: `${MESES[d.getMonth()]} de ${d.getFullYear()}`, qtd: 0, itens: [] };
+      g = { key, mes: `${MESES[p.month - 1]} de ${p.year}`, qtd: 0, itens: [] };
       idx.set(key, g);
       grupos.push(g);
     }
-    g.itens.push({ leilao: l, d });
+    g.itens.push({ leilao: l, p });
     g.qtd++;
   }
 
@@ -88,11 +100,11 @@ export default async function AgendaPage() {
             </div>
 
             <div className="lei-agenda__list">
-              {g.itens.map(({ leilao: a, d }) => {
+              {g.itens.map(({ leilao: a, p }) => {
                 const cor = statusCor(a.status);
                 const href = `/leilao/${a.slug ? `${a.id}-${a.slug}` : a.id}`;
                 const modalidade = a.tipoLabel || (a.tipo === 1 ? 'Online' : a.tipo === 2 ? 'Presencial' : a.tipo === 3 ? 'Simultâneo' : '');
-                const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const hora = `${p.hour}:${p.minute}`;
                 const local = textoLocal(a.local); // vazio quando sem endereço: não mostra nada
                 const codigo = a.codigo || (a.numero ? `${a.numero}${a.ano ? '/' + a.ano : ''}` : String(a.id));
                 // Comitentes: dedup por nome e ignora os que são só CNPJ/CPF (ex.: "24.754.392/0001-42").
@@ -106,8 +118,8 @@ export default async function AgendaPage() {
                 return (
                   <Link key={a.id} href={href} className="lei-agenda__card">
                     <div className="lei-agenda__date">
-                      <div className="lei-agenda__date-d">{d.getDate()}</div>
-                      <div className="lei-agenda__date-m">{MESES_CURTO[d.getMonth()]}</div>
+                      <div className="lei-agenda__date-d">{p.day}</div>
+                      <div className="lei-agenda__date-m">{MESES_CURTO[p.month - 1]}</div>
                     </div>
 
                     <div className="lei-agenda__body">

@@ -1,5 +1,9 @@
 // Helpers de formatação e rótulos de status (ver GUIA-WEBSITE-V2 §6.4).
 
+// Fuso oficial do negócio. As datas do ERP vêm em ISO com offset; no runtime do
+// Worker (UTC) formatar sem timeZone mostrava +3h. Toda formatação de data/hora usa isto.
+const TZ = 'America/Sao_Paulo';
+
 export function moeda(v: number | null | undefined): string {
   if (v === null || v === undefined) return '—';
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -38,14 +42,14 @@ export function dataHora(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '—';
-  return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('pt-BR', { timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 export function data(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return d.toLocaleDateString('pt-BR', { timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 // Códigos de status do leilão (GUIA §6.4).
@@ -81,8 +85,6 @@ export function corStatusLote(status: number): string {
 
 // Leilão aceita lance? (status 3=aberto ou 4=em leilão)
 export const leilaoPermiteLance = (status: number) => status === 3 || status === 4;
-
-const TZ = 'America/Sao_Paulo';
 
 export function hora(iso: string | null | undefined): string {
   if (!iso) return '';

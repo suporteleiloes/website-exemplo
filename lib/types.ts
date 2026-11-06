@@ -162,10 +162,15 @@ export interface Lote {
   valorInicial: number | null;
   valorInicial2: number | null;
   valorInicial3: number | null;
+  // Valor inicial da PRAÇA VIGENTE (1ª/2ª/3ª), computado no servidor. Antes o site
+  // usava sempre valorInicial (1ª) e mostrava o preço errado na 2ª praça.
+  valorInicialAtual: number | null;
   valorAvaliacao: number | null;
   valorMercado: number | null;
   valorIncremento: number | null;
   valorLanceAtual: number | null;
+  // Campo canônico pra tela: lance atual se houver; senão o inicial da praça vigente.
+  lanceInicialVigente: number | null;
   totalLances: number | null;
   permitirParcelamento: boolean | null;
   parcelamentoQtdParcelas: number | null;
