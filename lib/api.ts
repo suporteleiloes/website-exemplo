@@ -1,9 +1,12 @@
 // Cliente HTTP server-side da API Website V2.
 // - Sempre injeta o header multi-tenant Uloc-Mi.
 // - Envelope: listas = { result, total, page, limit, pages }; item = objeto; erro = { error, status, message, code }.
-// - Cache: usa o cache nativo do Next (revalidate por endpoint — ver GUIA-WEBSITE-V2 §10).
+// - Cache: cache LOCAL da Cloudflare por `revalidate` segundos + cópia de reserva se a API falhar
+//   (lib/api-cache.ts). NÃO usa o cache de dados do Next/R2: gravações falhavam e a página
+//   ficava presa na versão antiga.
 
 import { V2, TENANT, TENANT_HEADER, SITE_TOKEN, SITE_TOKEN_HEADER } from './config';
+import { buscarComCache } from './api-cache';
 import type {
   Paginated, Leilao, Lote, LancePublico, Filtros, SiteConfig, Banner, MenuGrupo, Comitente, Leiloeiro,
 } from './types';
@@ -43,19 +46,16 @@ interface FetchOpts {
 /** GET genérico na Website V2. Lança ApiException em erro HTTP. */
 export async function apiGet<T>(path: string, opts: FetchOpts = {}): Promise<T> {
   const url = `${V2}${path}${buildQuery(opts.params)}`;
-  const res = await fetch(url, {
-    headers: {
-      [TENANT_HEADER]: opts.tenant || TENANT,
-      ...(SITE_TOKEN ? { [SITE_TOKEN_HEADER]: SITE_TOKEN } : {}),
-      Accept: 'application/json',
-    },
-    next: { revalidate: opts.revalidate ?? 30 },
-  });
-  const text = await res.text();
+  const res = await buscarComCache(url, {
+    [TENANT_HEADER]: opts.tenant || TENANT,
+    ...(SITE_TOKEN ? { [SITE_TOKEN_HEADER]: SITE_TOKEN } : {}),
+    Accept: 'application/json',
+  }, opts.revalidate ?? 30);
+  const text = res.text;
   let body: unknown;
   try { body = text ? JSON.parse(text) : null; } catch { body = text; }
 
-  if (!res.ok) {
+  if (res.status < 200 || res.status >= 300) {
     const e = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
     throw new ApiException(
       (e.message as string) || `Erro ${res.status} em ${path}`,

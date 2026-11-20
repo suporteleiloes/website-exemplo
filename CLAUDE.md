@@ -27,6 +27,14 @@ do arrematante (`/conta`, login, lance, habilitação via `/me/*`), **popup** pr
 **contato** (`/contato`), **cadastro completo** de arrematante (`/cadastro` + BFF
 `app/api/auth/cadastro`).
 
+## ⛔ Cache dos dados da API: cache LOCAL da Cloudflare, nunca o cache de dados do Next/R2 (2026-11-20)
+
+`lib/api.ts → apiGet` passa por `lib/api-cache.ts (buscarComCache)`: dados da Website V2 ficam no **Cache API da Cloudflare** (por data center) por `revalidate` segundos; se a API falhar (5xx/timeout), serve a última cópia por até **10 min**; se o próprio cache falhar, busca direto na API. **Não use `next: { revalidate }` nem `fetch` com cache do Next para dados da API.**
+
+**Por quê (incidente de 20/11/2026):** o incremental cache do OpenNext no R2 passou a recusar gravações (`Failed to set to cache` 10043 erro interno / 10058 gravação concorrente no mesmo objeto). Quando a gravação falha, o Next serve a versão antiga **para sempre**: capa e ordem de lote desatualizadas por horas, em vários sites ao mesmo tempo. O Cache API não tem limite de escrita concorrente e falha "aberto". Carga na API: no máximo ~1 chamada por URL a cada `revalidate` s por data center (poucos atendem o Brasil).
+
+**Ao criar ou atualizar um site a partir deste exemplo:** copie `lib/api-cache.ts` e mantenha o `apiGet` usando `buscarComCache`. Conferência: Workers Observability do worker sem `Failed to set to cache`; 2ª carga da página ~ms. Decisão registrada na documentação interna da SL.
+
 ## Arquitetura (resumo)
 
 - **BFF auth**: JWT/refresh em cookies httpOnly (`app/api/auth/*`), proxy autenticado
