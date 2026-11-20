@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import RegistrarVisita from '@/components/RegistrarVisita';
 import { notFound, redirect } from 'next/navigation';
 import FiltroBarLote from '@/components/FiltroBarLote';
 import LoteCard from '@/components/LoteCard';
@@ -120,6 +121,7 @@ export default async function LeilaoPage(
 
   return (
     <main>
+      <RegistrarVisita tipo="leilao" id={leilao.id} leilaoStatus={leilao.status} />
       {/* Hero navy */}
       <section className="lei-ev-hero">
         <div className="lei-ev-hero__in">
