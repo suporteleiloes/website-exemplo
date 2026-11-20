@@ -35,6 +35,15 @@ do arrematante (`/conta`, login, lance, habilitação via `/me/*`), **popup** pr
 
 **Ao criar ou atualizar um site a partir deste exemplo:** copie `lib/api-cache.ts` e mantenha o `apiGet` usando `buscarComCache`. Conferência: Workers Observability do worker sem `Failed to set to cache`; 2ª carga da página ~ms. Decisão registrada na documentação interna da SL.
 
+## ⛔ Visitas: direto do navegador para a borda, nunca pelo BFF (2026-11-20)
+
+`components/RegistrarVisita.tsx` manda a visita do **navegador** para `${API_BASE}/api/website/v2/visitas/registrar` com `sendBeacon` + `text/plain` (sem preflight) e o tenant no corpo (`mi`). Em produção quem responde é um Worker da Cloudflare (204 na hora, fila, lote para a API): **zero PHP por clique**. Regras:
+- **Não passe pelo BFF (`/api/proxy`)**: gastaria uma execução do Worker do site e uma chamada da API por clique.
+- **Leilão com `status` 4 (em pregão) não registra visita**: passe `leilaoStatus`.
+- Só use `POST /lotes/{id}/visita` se a tela **mostra o número atualizado na hora** (ele lê o total).
+
+Detalhes e limites: GUIA-WEBSITE-V2 → "Visitas".
+
 ## Arquitetura (resumo)
 
 - **BFF auth**: JWT/refresh em cookies httpOnly (`app/api/auth/*`), proxy autenticado
